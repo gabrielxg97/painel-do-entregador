@@ -170,13 +170,13 @@
       </div>
 
       <p class="text-xs text-gray-300 leading-relaxed">
-        Cole abaixo o endereço do seu servidor Backend (ex: Render, localtunnel ou ngrok HTTPS) para carregar os pedidos neste aparelho:
+        Servidor oficial conectado:
       </p>
 
       <form onsubmit="saveApiConfig(event)" class="space-y-3 text-xs">
         <div>
           <label class="block text-gray-300 font-bold mb-1">URL do Servidor Backend (HTTPS)</label>
-          <input type="url" id="input-api-url" required placeholder="https://competilivery-api.onrender.com" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500 text-xs" />
+          <input type="url" id="input-api-url" required placeholder="https://painel-do-entregador.onrender.com" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500 text-xs" />
         </div>
 
         <div class="flex gap-2">
@@ -403,14 +403,16 @@
   </footer>
 
   <script>
-    // URL Base Dinâmica do Servidor Backend
+    // URL Base Oficial do Backend na Nuvem (Render)
+    const RENDER_BACKEND_URL = 'https://painel-do-entregador.onrender.com';
+
     function getApiBaseUrl() {
       const stored = localStorage.getItem('custom_api_backend_url');
       if (stored) return stored;
       if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
         return 'http://localhost:3000';
       }
-      return 'http://localhost:3000';
+      return RENDER_BACKEND_URL;
     }
 
     let API_BASE_URL = getApiBaseUrl();
@@ -434,7 +436,9 @@
 
     function setApiDefaultLocal() {
       localStorage.removeItem('custom_api_backend_url');
-      API_BASE_URL = 'http://localhost:3000';
+      API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+        ? 'http://localhost:3000'
+        : RENDER_BACKEND_URL;
       document.getElementById('input-api-url').value = API_BASE_URL;
       toggleApiConfigModal();
       fetchMyKanbanOrders();
@@ -1097,13 +1101,13 @@
         activeContainer.innerHTML = `
           <div class="glass-card p-6 rounded-3xl text-center space-y-3 border border-amber-500/30 bg-amber-950/10">
             <i data-lucide="wifi-off" class="w-8 h-8 mx-auto text-amber-400"></i>
-            <h4 class="font-extrabold text-amber-300 text-xs">Servidor Backend Desconectado</h4>
+            <h4 class="font-extrabold text-amber-300 text-xs">Conectando ao Servidor Render...</h4>
             <p class="text-[11px] text-gray-300 leading-relaxed">
-              No site público, é necessário configurar o endereço HTTPS do seu Servidor Backend.<br>
-              Clique no ícone ⚙️ no topo para inserir a URL do seu servidor (ex: Render ou localtunnel).
+              O servidor na nuvem leva cerca de 30 a 50 segundos para despertar no primeiro acesso da instância gratuita.<br>
+              Aguarde alguns segundos ou clique em atualizar!
             </p>
-            <button onclick="toggleApiConfigModal()" class="py-2.5 px-4 bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-xs rounded-xl shadow-lg">
-              ⚙️ CONFIGURAR SERVIDOR
+            <button onclick="fetchMyKanbanOrders()" class="py-2.5 px-4 bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-xs rounded-xl shadow-lg">
+              🔄 TENTAR NOVAMENTE
             </button>
           </div>
         `;
