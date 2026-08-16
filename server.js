@@ -123,14 +123,7 @@ async function getActiveDeliveryVipOrders() {
     const dispatchedDeliveryOrders = res.body.filter(o => {
       const isConcludedOrCancelled = o.lastEvent === 'CONCLUDED' || o.lastEvent === 'CANCELLED';
       const isDelivery = o.type === 'DELIVERY' || (o.delivery && !o.takeout);
-      
-      const isDispatchedByOperator = 
-        o.lastEvent === 'READY_FOR_PICKUP' || 
-        o.lastEvent === 'DISPATCHED' || 
-        o.lastEvent === 'DELIVERY_ONGOING' || 
-        Boolean(o.dispatchedDateTime);
-
-      return !isConcludedOrCancelled && isDelivery && isDispatchedByOperator;
+      return !isConcludedOrCancelled && isDelivery;
     });
 
     const driversList = Array.from(onlineDrivers.values());
@@ -334,11 +327,7 @@ const server = http.createServer(async (req, res) => {
       const driverPhone = normalizePhone(parsedUrl.query.phone || '');
       const dispatchedOrders = await getActiveDeliveryVipOrders();
 
-      const activeOrders = dispatchedOrders.filter(o => {
-        const assignment = orderAssignments.get(o.displayId) || orderAssignments.get(o.id);
-        if (!assignment) return true;
-        return normalizePhone(assignment.driverPhone) === driverPhone;
-      });
+      const activeOrders = dispatchedOrders;
 
       pruneCompletedOrdersOlderThan12Hours();
       const validCompletedList = Array.from(completedOrdersStore.values());
