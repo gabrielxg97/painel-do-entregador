@@ -368,6 +368,11 @@
   </footer>
 
   <script>
+    // URL Base da API (Conecta ao servidor local se estiver no PC, ou servidor remoto na nuvem)
+    const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? 'http://localhost:3000'
+      : (localStorage.getItem('api_backend_url') || 'http://localhost:3000');
+
     let deferredPwaPrompt = null;
 
     if ('serviceWorker' in navigator) {
@@ -592,7 +597,7 @@
       confirmBtn.innerText = 'CONFIRMANDO...';
 
       try {
-        const res = await fetch('http://localhost:3000/api/driver/confirm-by-code', {
+        const res = await fetch(`${API_BASE_URL}/api/driver/confirm-by-code`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ orderCode: displayId, driverName: currentDriver.name })
@@ -690,7 +695,7 @@
     async function registerDriverOnline() {
       if (!currentDriver.name || !currentDriver.phone) return;
       try {
-        await fetch('http://localhost:3000/api/driver/login', {
+        await fetch(`${API_BASE_URL}/api/driver/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name: currentDriver.name, phone: currentDriver.phone, status: 'AVAILABLE' })
@@ -878,7 +883,7 @@
 
       try {
         const cleanPhone = currentDriver.phone.replace(/\D/g, '');
-        const res = await fetch(`http://localhost:3000/api/driver/my-orders?phone=${cleanPhone}`);
+        const res = await fetch(`${API_BASE_URL}/api/driver/my-orders?phone=${cleanPhone}`);
         const data = await res.json();
 
         const activeOrders = data.activeOrders || [];
