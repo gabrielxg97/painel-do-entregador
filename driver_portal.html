@@ -6,7 +6,7 @@
   <title>Painel do Entregador — CompetiLivery</title>
 
   <!-- PWA Meta Tags -->
-  <link rel="manifest" href="/manifest.json" />
+  <link rel="manifest" href="manifest.json" />
   <meta name="theme-color" content="#ff5500" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -48,21 +48,23 @@
 </head>
 <body class="bg-dark-900 text-white min-h-screen flex flex-col justify-between font-sans antialiased selection:bg-brand-500 selection:text-white pb-safe">
 
-  <!-- BANNER NOTIFICAÇÃO DE INSTALAÇÃO DO PWA (CELULAR) -->
-  <div id="pwa-install-banner" class="hidden sticky top-0 z-40 bg-gradient-to-r from-brand-600 via-amber-600 to-brand-600 text-white p-3 shadow-2xl border-b border-amber-400/30">
+  <!-- BANNER NOTIFICAÇÃO DE INSTALAÇÃO DO PWA COM ÍCONE DE MOTO 🛵 -->
+  <div id="pwa-install-banner" class="sticky top-0 z-40 bg-gradient-to-r from-brand-600 via-amber-600 to-brand-600 text-white p-3 shadow-2xl border-b border-amber-400/30">
     <div class="max-w-6xl mx-auto flex items-center justify-between gap-3">
       <div class="flex items-center space-x-3">
-        <div class="w-10 h-10 rounded-2xl bg-black/30 flex items-center justify-center shrink-0">
-          <i data-lucide="smartphone" class="w-5 h-5 text-amber-300"></i>
+        <div class="w-10 h-10 rounded-2xl bg-black/30 flex items-center justify-center shrink-0 border border-amber-400/40">
+          <img src="https://cdn-icons-png.flaticon.com/512/2972/2972185.png" alt="Moto" class="w-6 h-6 object-contain" />
         </div>
         <div>
-          <h4 class="font-extrabold text-xs leading-none">INSTALAR APLICATIVO DO ENTREGADOR</h4>
+          <h4 class="font-extrabold text-xs leading-none flex items-center gap-1.5">
+            <span>INSTALAR APLICATIVO DO ENTREGADOR</span>
+          </h4>
           <p class="text-[11px] text-amber-100 font-medium mt-0.5">Adicione o App na tela inicial do seu celular para facilitar o acesso!</p>
         </div>
       </div>
       <div class="flex items-center space-x-2 shrink-0">
-        <button id="pwa-install-btn" onclick="triggerPwaInstall()" class="px-3.5 py-2 bg-white text-brand-600 font-extrabold text-xs rounded-xl shadow-lg active:scale-95 transition-all">
-          INSTALAR APP
+        <button id="pwa-install-btn" onclick="triggerPwaInstall()" class="px-3.5 py-2 bg-white text-brand-600 font-extrabold text-xs rounded-xl shadow-lg active:scale-95 transition-all flex items-center gap-1.5">
+          <i data-lucide="download" class="w-4 h-4"></i> INSTALAR APP
         </button>
         <button onclick="dismissPwaBanner()" class="p-1.5 text-amber-200 hover:text-white rounded-lg">
           <i data-lucide="x" class="w-4 h-4"></i>
@@ -71,12 +73,12 @@
     </div>
   </div>
 
-  <!-- Top Navigation Header (SEM ENGRENAGEM) -->
+  <!-- Top Navigation Header -->
   <header class="p-3.5 sm:p-4 bg-gray-900/90 backdrop-blur-md border-b border-gray-800 sticky top-0 z-30">
     <div class="max-w-6xl mx-auto flex items-center justify-between">
       <div class="flex items-center space-x-2.5">
         <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-brand-600 to-amber-500 flex items-center justify-center text-white font-bold shadow-lg shadow-brand-500/20">
-          <i data-lucide="bike" class="w-5 h-5 sm:w-6 sm:h-6"></i>
+          <img src="https://cdn-icons-png.flaticon.com/512/2972/2972185.png" alt="Moto" class="w-6 h-6 object-contain" />
         </div>
         <div>
           <h1 class="font-extrabold text-white text-sm sm:text-base leading-none">Painel do Entregador</h1>
@@ -128,7 +130,7 @@
         </div>
 
         <div id="kanban-active-orders" class="space-y-4">
-          <div class="text-center py-12 text-gray-500 text-xs">Buscando entregas atribuídas a você...</div>
+          <div class="text-center py-12 text-gray-500 text-xs">Buscando entregas despachadas a você...</div>
         </div>
       </div>
 
@@ -201,7 +203,7 @@
         </button>
       </div>
 
-      <!-- CARD DE ATENÇÃO: LEVAR TROCO (SE HOUVER TROCO) -->
+      <!-- CARD DE ATENÇÃO: LEVAR TROCO (SE HOUVER TROCO EM DINHEIRO) -->
       <div id="modal-change-alert" class="hidden p-3.5 rounded-2xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 text-xs font-bold flex items-center gap-2.5 animate-pulse">
         <div class="w-8 h-8 rounded-xl bg-emerald-500/30 text-emerald-300 flex items-center justify-center shrink-0">
           <i data-lucide="banknote" class="w-5 h-5"></i>
@@ -384,7 +386,7 @@
 
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js').catch(() => {});
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
       });
     }
 
@@ -407,7 +409,7 @@
           deferredPwaPrompt = null;
         });
       } else {
-        alert('Para instalar este App:\n\n• No Android (Chrome): Clique nos 3 pontinhos do menu > "Adicionar à tela inicial" ou "Instalar aplicativo".\n\n• No iPhone (Safari): Clique no botão de Compartilhar > "Adicionar à Tela de Início".');
+        alert('🛵 Para instalar o App CompetiLivery no seu celular:\n\n• No Android (Chrome): Clique no menu dos 3 pontinhos no topo da tela > Escolha "Adicionar à tela inicial" ou "Instalar aplicativo".\n\n• No iPhone (Safari): Clique no botão de Compartilhar (quadrado com seta pra cima) > Escolha "Adicionar à Tela de Início".');
       }
     }
 
@@ -424,73 +426,55 @@
     let activeOrdersCache = [];
     let pendingConfirmDisplayId = null;
 
-    // Extrator Profundo e Recursivo de Troco na Estrutura de Pagamentos da CompetiLivery
+    // Extrator Restrito de Troco (APENAS QUANDO A FORMA DE PAGAMENTO PRINCIPAL FOR DINHEIRO/CASH)
     function extractChangeDeep(order) {
       if (!order) return { isCash: false, hasChange: false, changeForVal: 0, changeAmountVal: 0, text: 'sem troco' };
 
-      let isCash = false;
+      const primaryMethodObj = order.payments && order.payments.methods && order.payments.methods.length > 0
+        ? order.payments.methods[0]
+        : null;
+
+      let isCashMethod = false;
+
+      if (primaryMethodObj) {
+        const methodStr = (primaryMethodObj.method || '').toUpperCase();
+        const methodInfoStr = (primaryMethodObj.methodInfo || '').toUpperCase();
+
+        if (methodStr === 'CASH' || methodStr === 'DINHEIRO' || methodStr === 'MONEY' ||
+            methodInfoStr.includes('DINHEIRO') || methodInfoStr.includes('CASH')) {
+          isCashMethod = true;
+        }
+      } else {
+        const textCheck = `${order.observation || ''} ${order.note || ''}`.toUpperCase();
+        if (textCheck.includes('DINHEIRO') || textCheck.includes('TROCO')) {
+          isCashMethod = true;
+        }
+      }
+
+      // SE A FORMA PRINCIPAL FOR CARTÃO / DEBITO / CREDITO / PIX / ONLINE -> NÃO É DINHEIRO! RETORNAR SEM TROCO!
+      if (!isCashMethod) {
+        return {
+          isCash: false,
+          hasChange: false,
+          changeForVal: 0,
+          changeAmountVal: 0,
+          text: 'sem troco'
+        };
+      }
+
+      // SOMENTE SE FOR DINHEIRO: Calcular o troco
       let changeForVal = 0;
       let changeAmountVal = 0;
-      let foundText = '';
 
-      function parseVal(val) {
-        if (typeof val === 'number') return val;
-        if (typeof val === 'string') {
-          const clean = val.replace(/[^\d.,]/g, '').replace(',', '.');
-          return parseFloat(clean) || 0;
-        }
-        if (val && typeof val.value === 'number') return val.value;
-        if (val && typeof val.value === 'string') return parseVal(val.value);
-        if (val && typeof val.amount === 'number') return val.amount;
-        return 0;
+      if (primaryMethodObj) {
+        if (typeof primaryMethodObj.changeFor === 'number') changeForVal = primaryMethodObj.changeFor;
+        else if (primaryMethodObj.changeFor && typeof primaryMethodObj.changeFor.value === 'number') changeForVal = primaryMethodObj.changeFor.value;
+
+        if (typeof primaryMethodObj.change === 'number') changeAmountVal = primaryMethodObj.change;
+        else if (primaryMethodObj.change && typeof primaryMethodObj.change.value === 'number') changeAmountVal = primaryMethodObj.change.value;
       }
 
-      function deepSearchChange(obj, depth = 0) {
-        if (!obj || depth > 5) return;
-        if (typeof obj !== 'object') return;
-
-        for (const [key, val] of Object.entries(obj)) {
-          const keyLower = key.toLowerCase();
-
-          if (typeof val === 'string') {
-            const valLower = val.toLowerCase();
-            if (valLower.includes('dinheiro') || valLower.includes('cash') || valLower.includes('troco')) {
-              isCash = true;
-              foundText += ` ${val}`;
-            }
-          }
-
-          if (keyLower.includes('changefor') || keyLower.includes('change_for') || keyLower.includes('trocopara') || keyLower.includes('troco_para')) {
-            const num = parseVal(val);
-            if (num > changeForVal) changeForVal = num;
-          }
-
-          if (keyLower === 'change' || keyLower.includes('valtroco') || keyLower.includes('valor_troco') || keyLower.includes('valortroco')) {
-            const num = parseVal(val);
-            if (num > changeAmountVal) changeAmountVal = num;
-          }
-
-          if (typeof val === 'object' && val !== null) {
-            deepSearchChange(val, depth + 1);
-          }
-        }
-      }
-
-      if (order.payments) {
-        deepSearchChange(order.payments);
-      }
-      if (order.delivery) {
-        deepSearchChange(order.delivery);
-      }
-
-      foundText += ` ${order.observation || ''} ${order.note || ''} ${order.instructions || ''} ${order.delivery?.deliveryAddress?.reference || ''} ${order.delivery?.deliveryAddress?.complement || ''}`;
-
-      if (!isCash) {
-        if (foundText.toLowerCase().includes('dinheiro') || foundText.toLowerCase().includes('troco')) {
-          isCash = true;
-        }
-      }
-
+      const foundText = `${order.observation || ''} ${order.note || ''} ${primaryMethodObj?.methodInfo || ''}`;
       if (changeForVal === 0 && foundText) {
         const matchFor = foundText.match(/troco\s+(?:para|p\/|de)?\s*r?\$?\s*(\d+(?:[.,]\d{2})?)/i);
         if (matchFor && matchFor[1]) {
@@ -504,11 +488,7 @@
         changeAmountVal = changeForVal - orderTotalVal;
       }
 
-      if (changeForVal === 0 && changeAmountVal > 0) {
-        changeForVal = orderTotalVal + changeAmountVal;
-      }
-
-      if (isCash && (changeForVal > 0 || changeAmountVal > 0)) {
+      if (changeForVal > 0 || changeAmountVal > 0) {
         const calcDiff = changeAmountVal > 0 ? changeAmountVal : (changeForVal - orderTotalVal);
         return {
           isCash: true,
@@ -517,23 +497,15 @@
           changeAmountVal: calcDiff > 0 ? calcDiff : 0,
           text: `Levar R$ ${(calcDiff > 0 ? calcDiff : 0).toFixed(2)} de troco (para R$ ${changeForVal.toFixed(2)})`
         };
-      } else if (isCash) {
-        return {
-          isCash: true,
-          hasChange: false,
-          changeForVal: 0,
-          changeAmountVal: 0,
-          text: 'sem troco (Dinheiro trocado)'
-        };
-      } else {
-        return {
-          isCash: false,
-          hasChange: false,
-          changeForVal: 0,
-          changeAmountVal: 0,
-          text: 'sem troco'
-        };
       }
+
+      return {
+        isCash: true,
+        hasChange: false,
+        changeForVal: 0,
+        changeAmountVal: 0,
+        text: 'sem troco (Dinheiro trocado)'
+      };
     }
 
     // Extrator Completo e Seguro da Taxa de Entrega do Pedido
@@ -941,7 +913,7 @@
                   </span>
                 </div>
 
-                <!-- CARD / BANNER DE ATENÇÃO PARA TROCO NO KANBAN -->
+                <!-- CARD / BANNER DE ATENÇÃO PARA TROCO NO KANBAN (APENAS DINHEIRO) -->
                 ${changeInfo.hasChange ? `
                   <div class="p-3 rounded-2xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 text-xs font-extrabold flex items-center justify-between shadow-lg animate-pulse">
                     <div class="flex items-center gap-2">
@@ -996,9 +968,9 @@
               <div class="w-12 h-12 rounded-2xl bg-gray-800 text-brand-400 flex items-center justify-center mx-auto">
                 <i data-lucide="bike" class="w-6 h-6"></i>
               </div>
-              <h4 class="font-extrabold text-white text-sm">Nenhuma Entrega em Andamento</h4>
+              <h4 class="font-extrabold text-white text-sm">Nenhuma Entrega Despachada</h4>
               <p class="text-xs text-gray-400 leading-relaxed">
-                Assim que você despachar um pedido no painel da CompetiLivery, ele aparecerá aqui nesta coluna em tempo real.
+                Assim que a loja despachar um pedido no painel de controle, ele aparecerá aqui nesta coluna em tempo real.
               </p>
             </div>
           `;

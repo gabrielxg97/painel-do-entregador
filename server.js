@@ -123,7 +123,14 @@ async function getActiveDeliveryVipOrders() {
     const dispatchedDeliveryOrders = res.body.filter(o => {
       const isConcludedOrCancelled = o.lastEvent === 'CONCLUDED' || o.lastEvent === 'CANCELLED';
       const isDelivery = o.type === 'DELIVERY' || (o.delivery && !o.takeout);
-      return !isConcludedOrCancelled && isDelivery;
+      
+      const isDispatchedByOperator = 
+        o.lastEvent === 'READY_FOR_PICKUP' || 
+        o.lastEvent === 'DISPATCHED' || 
+        o.lastEvent === 'DELIVERY_ONGOING' || 
+        Boolean(o.dispatchedDateTime);
+
+      return !isConcludedOrCancelled && isDelivery && isDispatchedByOperator;
     });
 
     const driversList = Array.from(onlineDrivers.values());
