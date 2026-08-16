@@ -5,7 +5,7 @@ const path = require('path');
 const url = require('url');
 
 const CONFIG = {
-  port: 3000,
+  port: process.env.PORT || 3000,
   apiUrl: 'https://api.deliveryvip.com.br',
   clientId: '37VRXfJKDRLWo9NYpOO3mqYQVx1FJxjWiHxuA-fkwaM',
   clientSecret: '7c6r0i47NdGFJW8t8sA48E84C73Cj2kjDaRwvvl4iZs',

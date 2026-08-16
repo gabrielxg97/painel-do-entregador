@@ -1,0 +1,12 @@
+{
+  "name": "competilivery-painel-entregador",
+  "version": "1.0.0",
+  "description": "Painel de Entregas e Frota de Motoboys — CompetiLivery",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "Gabriel Gomes",
+  "license": "ISC"
+}
