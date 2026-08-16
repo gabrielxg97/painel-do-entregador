@@ -71,7 +71,7 @@
     </div>
   </div>
 
-  <!-- Top Navigation Header -->
+  <!-- Top Navigation Header (SEM ENGRENAGEM) -->
   <header class="p-3.5 sm:p-4 bg-gray-900/90 backdrop-blur-md border-b border-gray-800 sticky top-0 z-30">
     <div class="max-w-6xl mx-auto flex items-center justify-between">
       <div class="flex items-center space-x-2.5">
@@ -86,11 +86,8 @@
         </div>
       </div>
 
-      <!-- Motoboy Profile Status / Settings / Refresh -->
+      <!-- Motoboy Profile Status / Refresh -->
       <div class="flex items-center space-x-2 sm:space-x-3">
-        <button onclick="toggleApiConfigModal()" class="p-2 sm:p-2.5 text-amber-400 hover:text-white bg-gray-800/80 hover:bg-gray-700 rounded-xl border border-amber-500/30 transition-all" title="Configurar Conexão do Servidor (API)">
-          <i data-lucide="settings" class="w-4 h-4"></i>
-        </button>
         <button onclick="fetchMyKanbanOrders()" class="p-2 sm:p-2.5 text-gray-400 hover:text-white bg-gray-800/80 hover:bg-gray-700 rounded-xl border border-gray-700/60 transition-all" title="Atualizar Pedidos">
           <i data-lucide="refresh-cw" class="w-4 h-4"></i>
         </button>
@@ -158,38 +155,6 @@
     </div>
 
   </main>
-
-  <!-- MODAL DE CONFIGURAÇÃO DA URL DO SERVIDOR (API) -->
-  <div id="modal-api-config" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
-    <div class="glass-card w-full max-w-sm rounded-3xl p-6 space-y-4 border border-amber-500/40 shadow-2xl">
-      <div class="flex justify-between items-center pb-3 border-b border-gray-800">
-        <h3 class="font-extrabold text-white text-sm flex items-center gap-2">
-          <i data-lucide="settings" class="w-4 h-4 text-amber-400"></i> Conexão do Servidor (API)
-        </h3>
-        <button onclick="toggleApiConfigModal()" class="text-gray-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
-      </div>
-
-      <p class="text-xs text-gray-300 leading-relaxed">
-        Servidor oficial conectado:
-      </p>
-
-      <form onsubmit="saveApiConfig(event)" class="space-y-3 text-xs">
-        <div>
-          <label class="block text-gray-300 font-bold mb-1">URL do Servidor Backend (HTTPS)</label>
-          <input type="url" id="input-api-url" required placeholder="https://painel-do-entregador.onrender.com" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500 text-xs" />
-        </div>
-
-        <div class="flex gap-2">
-          <button type="button" onclick="setApiDefaultLocal()" class="py-2.5 px-3 bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold rounded-xl text-[11px]">
-            Usar Localhost
-          </button>
-          <button type="submit" class="flex-1 py-2.5 bg-gradient-to-r from-amber-600 to-brand-600 text-white font-extrabold rounded-xl text-xs shadow-lg">
-            SALVAR CONEXÃO
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
 
   <!-- POPUP CUSTOMIZADO LIMPO DE CONFIRMAÇÃO DE ENTREGA -->
   <div id="modal-confirm-delivery" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
@@ -407,42 +372,13 @@
     const RENDER_BACKEND_URL = 'https://painel-do-entregador.onrender.com';
 
     function getApiBaseUrl() {
-      const stored = localStorage.getItem('custom_api_backend_url');
-      if (stored) return stored;
       if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
         return 'http://localhost:3000';
       }
       return RENDER_BACKEND_URL;
     }
 
-    let API_BASE_URL = getApiBaseUrl();
-
-    function toggleApiConfigModal() {
-      const modal = document.getElementById('modal-api-config');
-      document.getElementById('input-api-url').value = API_BASE_URL;
-      modal.classList.toggle('hidden');
-    }
-
-    function saveApiConfig(e) {
-      e.preventDefault();
-      let urlVal = document.getElementById('input-api-url').value.trim();
-      if (!urlVal) return;
-      urlVal = urlVal.replace(/\/+$/, ''); // remover barra no final
-      localStorage.setItem('custom_api_backend_url', urlVal);
-      API_BASE_URL = urlVal;
-      toggleApiConfigModal();
-      fetchMyKanbanOrders();
-    }
-
-    function setApiDefaultLocal() {
-      localStorage.removeItem('custom_api_backend_url');
-      API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-        ? 'http://localhost:3000'
-        : RENDER_BACKEND_URL;
-      document.getElementById('input-api-url').value = API_BASE_URL;
-      toggleApiConfigModal();
-      fetchMyKanbanOrders();
-    }
+    const API_BASE_URL = getApiBaseUrl();
 
     let deferredPwaPrompt = null;
 
@@ -1099,15 +1035,14 @@
 
       } catch (err) {
         activeContainer.innerHTML = `
-          <div class="glass-card p-6 rounded-3xl text-center space-y-3 border border-amber-500/30 bg-amber-950/10">
-            <i data-lucide="wifi-off" class="w-8 h-8 mx-auto text-amber-400"></i>
-            <h4 class="font-extrabold text-amber-300 text-xs">Conectando ao Servidor Render...</h4>
-            <p class="text-[11px] text-gray-300 leading-relaxed">
-              O servidor na nuvem leva cerca de 30 a 50 segundos para despertar no primeiro acesso da instância gratuita.<br>
-              Aguarde alguns segundos ou clique em atualizar!
+          <div class="glass-card p-6 rounded-3xl text-center space-y-3 border border-amber-500/20 bg-gray-900/90">
+            <i data-lucide="refresh-cw" class="w-8 h-8 mx-auto text-brand-500 animate-spin"></i>
+            <h4 class="font-extrabold text-white text-xs">Conectando à Central de Entregas...</h4>
+            <p class="text-[11px] text-gray-400 leading-relaxed">
+              Sincronizando os dados da loja em tempo real. Aguarde alguns segundos...
             </p>
-            <button onclick="fetchMyKanbanOrders()" class="py-2.5 px-4 bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-xs rounded-xl shadow-lg">
-              🔄 TENTAR NOVAMENTE
+            <button onclick="fetchMyKanbanOrders()" class="py-2.5 px-4 bg-gray-800 hover:bg-gray-700 text-brand-400 font-extrabold text-xs rounded-xl border border-gray-700 shadow-lg">
+              🔄 ATUALIZAR AGORA
             </button>
           </div>
         `;
