@@ -1,0 +1,41 @@
+[
+  {
+    "id": "store_11c151b6-01b8-4d9a-8cb4-d8cedbe3412d",
+    "name": "CompetiLivery",
+    "slug": "competilivery",
+    "merchantId": "11c151b6-01b8-4d9a-8cb4-d8cedbe3412d",
+    "clientId": "37VRXfJKDRLWo9NYpOO3mqYQVx1FJxjWiHxuA-fkwaM",
+    "clientSecret": "7c6r0i47NdGFJW8t8sA48E84C73Cj2kjDaRwvvl4iZs",
+    "ownerEmail": "gabriel.gomes@competilivery.com.br",
+    "logoUrl": "https://cdn-icons-png.flaticon.com/512/2972/2972185.png",
+    "createdAt": "2026-08-16T17:20:00.000Z",
+    "status": "ACTIVE",
+    "dispatchMode": "MANUAL_SELECT"
+  },
+  {
+    "id": "store_4fdfa30a-37cc-4be3-9fde-42982eac2a18",
+    "name": "Mrs Burguer",
+    "slug": "mrs-burguer",
+    "merchantId": "4fdfa30a-37cc-4be3-9fde-42982eac2a18",
+    "clientId": "37VRXfJKDRLWo9NYpOO3mqYQVx1FJxjWiHxuA-fkwaM",
+    "clientSecret": "7c6r0i47NdGFJW8t8sA48E84C73Cj2kjDaRwvvl4iZs",
+    "ownerEmail": "robertribeiropadilha@gmail.com",
+    "logoUrl": "https://cdn-icons-png.flaticon.com/512/3075/3075977.png",
+    "createdAt": "2026-08-16T20:25:23.724Z",
+    "status": "ACTIVE",
+    "dispatchMode": "MANUAL_SELECT"
+  },
+  {
+    "id": "store_1d2862b4-2d8b-4478-a93c-48ecf526b2ef",
+    "name": "Hamburgeria do vitim",
+    "slug": "hamburgeria-do-vitim",
+    "merchantId": "1d2862b4-2d8b-4478-a93c-48ecf526b2ef",
+    "clientId": "37VRXfJKDRLWo9NYpOO3mqYQVx1FJxjWiHxuA-fkwaM",
+    "clientSecret": "7c6r0i47NdGFJW8t8sA48E84C73Cj2kjDaRwvvl4iZs",
+    "ownerEmail": "victorsistemahnd@gmail.com",
+    "logoUrl": "",
+    "createdAt": "2026-08-16T20:31:51.449Z",
+    "status": "ACTIVE",
+    "dispatchMode": "MANUAL_SELECT"
+  }
+]

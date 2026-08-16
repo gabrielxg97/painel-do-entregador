@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Painel da Loja (ADM) — CompetiLivery</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Script Oficial do Google OAuth -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: { 500: '#ff5500', 600: '#e64500', 700: '#cc3700' },
+            dark: { 900: '#090d16', 800: '#111827', 700: '#1f2937' }
+          },
+          fontFamily: { sans: ['Outfit', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <style>
+    .glass-card {
+      background: rgba(17, 24, 39, 0.94);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .kanban-col {
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    @media print {
+      body * { visibility: hidden; }
+      #modal-driver-report, #modal-driver-report * { visibility: visible; }
+      #modal-driver-report { position: absolute; left: 0; top: 0; width: 100%; height: auto; background: white !important; color: black !important; }
+      .glass-card { background: white !important; color: black !important; border: none !important; }
+      button, a { display: none !important; }
+      input { border: none !important; background: transparent !important; color: black !important; }
+    }
+  </style>
+</head>
+<body class="bg-dark-900 text-white min-h-screen flex flex-col justify-between font-sans antialiased">
+
+  <!-- Header do Gestor -->
+  <header class="p-4 bg-gray-900/90 backdrop-blur-md border-b border-gray-800 sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+      
+      <div class="flex items-center space-x-3">
+        <div id="header-store-icon" class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-brand-600 to-amber-500 flex items-center justify-center text-white shadow-lg shadow-brand-500/20 overflow-hidden shrink-0">
+          <img src="https://cdn-icons-png.flaticon.com/512/2972/2972185.png" alt="Moto" class="w-6 h-6 object-contain" />
+        </div>
+        <div>
+          <h1 id="header-store-title" class="font-extrabold text-white text-base sm:text-lg leading-none">Painel de Gestão da Loja (ADM)</h1>
+          <span class="text-xs text-amber-400 font-semibold flex items-center gap-1 mt-0.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Loja: <span id="header-store-name">Carregando...</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- Configuração da Flag de Despacho & Acesso ao App do Entregador & Relatório -->
+      <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+        
+        <!-- BOTÃO RELATÓRIO DE FECHAMENTO DOS MOTOBOYS -->
+        <button onclick="openDriverReportModal()" class="px-3.5 py-2 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 hover:from-emerald-500 hover:to-teal-400 text-white font-extrabold rounded-2xl text-xs flex items-center gap-2 shadow-lg shadow-emerald-600/20 transition-all active:scale-95 border border-emerald-400/30">
+          <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+          <span>📊 FECHAMENTO MOTOBOYS</span>
+        </button>
+
+        <!-- BOTÃO PAINEL DO ENTREGADOR PARA COMPARTILHAMENTO RÁPIDO -->
+        <button onclick="openDriverAppLinkModal()" class="px-3.5 py-2 bg-gradient-to-r from-brand-600 via-amber-600 to-brand-500 hover:from-brand-500 hover:to-amber-500 text-white font-extrabold rounded-2xl text-xs flex items-center gap-2 shadow-lg shadow-brand-600/20 transition-all active:scale-95 border border-amber-400/30">
+          <img src="https://cdn-icons-png.flaticon.com/512/2972/2972185.png" alt="Moto" class="w-4 h-4 object-contain" />
+          <span>📱 APP ENTREGADOR</span>
+        </button>
+
+        <div class="bg-gray-800/90 p-1 rounded-2xl border border-gray-700/80 flex items-center gap-1 text-xs">
+          <button id="btn-mode-auto" onclick="setDispatchMode('AUTO_SINGLE')" class="px-3 py-1.5 rounded-xl font-bold transition-all text-gray-400">
+            🤖 Entregador Único
+          </button>
+          <button id="btn-mode-manual" onclick="setDispatchMode('MANUAL_SELECT')" class="px-3 py-1.5 rounded-xl font-bold transition-all bg-brand-600 text-white shadow-md">
+            👤 Seleção Manual
+          </button>
+        </div>
+
+        <button onclick="fetchAdminOrders()" class="p-2.5 text-gray-400 hover:text-white bg-gray-800/80 rounded-xl border border-gray-700/60" title="Atualizar Pedidos">
+          <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+        </button>
+
+        <button onclick="logoutStoreOwner()" class="p-2.5 text-gray-400 hover:text-white bg-gray-800/80 rounded-xl border border-gray-700/60" title="Sair / Alternar Conta">
+          <i data-lucide="log-out" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Main Kanban Board ADM com Cards Ricos -->
+  <main class="max-w-7xl w-full mx-auto p-4 sm:p-6 flex-1 space-y-6">
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+
+      <!-- COLUNA 1: 👨‍🍳 EM PREPARO -->
+      <div class="kanban-col rounded-3xl p-5 space-y-4 shadow-xl">
+        <div class="flex items-center justify-between pb-3 border-b border-gray-800">
+          <div class="flex items-center space-x-2.5">
+            <div class="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold">
+              <i data-lucide="chef-hat" class="w-4 h-4"></i>
+            </div>
+            <h2 class="font-extrabold text-white text-base tracking-tight">Em Preparo</h2>
+          </div>
+          <span id="count-preparing" class="px-3 py-1 rounded-full bg-amber-500/20 text-amber-400 font-extrabold text-xs border border-amber-500/30">0</span>
+        </div>
+
+        <div id="list-preparing" class="space-y-4">
+          <div class="text-center py-12 text-gray-500 text-xs">Buscando novos pedidos na DeliveryVip...</div>
+        </div>
+      </div>
+
+      <!-- COLUNA 2: 🛵 ENTREGANDO -->
+      <div class="kanban-col rounded-3xl p-5 space-y-4 shadow-xl">
+        <div class="flex items-center justify-between pb-3 border-b border-gray-800">
+          <div class="flex items-center space-x-2.5">
+            <div class="w-8 h-8 rounded-xl bg-brand-500/20 text-brand-400 flex items-center justify-center font-bold">
+              <img src="https://cdn-icons-png.flaticon.com/512/2972/2972185.png" alt="Moto" class="w-4 h-4 object-contain" />
+            </div>
+            <h2 class="font-extrabold text-white text-base tracking-tight">Entregando</h2>
+          </div>
+          <span id="count-ongoing" class="px-3 py-1 rounded-full bg-brand-500/20 text-brand-400 font-extrabold text-xs border border-brand-500/30">0</span>
+        </div>
+
+        <div id="list-ongoing" class="space-y-4">
+          <div class="text-center py-12 text-gray-500 text-xs">Nenhuma entrega em andamento.</div>
+        </div>
+      </div>
+
+      <!-- COLUNA 3: ✅ FINALIZADOS -->
+      <div class="kanban-col rounded-3xl p-5 space-y-4 shadow-xl">
+        <div class="flex flex-col gap-2.5 pb-3 border-b border-gray-800">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2.5">
+              <div class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
+                <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <h2 class="font-extrabold text-white text-base tracking-tight leading-none">Finalizados</h2>
+                <span class="text-[10px] text-gray-400 font-semibold">Últimas 48 horas</span>
+              </div>
+            </div>
+            <span id="count-completed" class="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 font-extrabold text-xs border border-emerald-500/30">0</span>
+          </div>
+
+          <!-- FILTROS DE BUSCA E ORDENAÇÃO DE FINALIZADOS -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+            <input type="text" id="search-completed-customer" oninput="renderCompletedList()" placeholder="🔍 Buscar cliente..." class="w-full bg-gray-900 border border-gray-800 rounded-xl p-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 font-semibold" />
+            <select id="sort-completed-order" onchange="renderCompletedList()" class="bg-gray-900 border border-gray-800 rounded-xl p-2 text-xs text-emerald-400 font-bold focus:outline-none">
+              <option value="desc">🔽 Mais Recentes Primeiro</option>
+              <option value="asc">🔼 Mais Antigos Primeiro</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="list-completed" class="space-y-4">
+          <div class="text-center py-12 text-gray-500 text-xs">Nenhum pedido finalizado nas últimas 48h.</div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- MODAL DE RELATÓRIO E FECHAMENTO FINANCEIRO DOS MOTOBOYS -->
+  <div id="modal-driver-report" class="fixed inset-0 z-50 hidden flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md">
+    <div class="glass-card w-full max-w-4xl rounded-3xl p-5 sm:p-6 space-y-5 border border-gray-800 shadow-2xl max-h-[92vh] overflow-y-auto">
+      
+      <div class="flex justify-between items-center pb-4 border-b border-gray-800">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30 shrink-0">
+            <i data-lucide="wallet" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="text-lg font-extrabold text-white">Relatório de Fechamento por Entregador</h3>
+            <p class="text-xs text-gray-400">Somatória das taxas de entregas finalizadas + valor fixo da loja</p>
+          </div>
+        </div>
+        <button onclick="closeDriverReportModal()" class="p-2 text-gray-400 hover:text-white rounded-xl hover:bg-gray-800">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- TABELA DO FECHAMENTO DOS MOTOBOYS -->
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs border-collapse">
+          <thead>
+            <tr class="border-b border-gray-800 text-gray-400 font-extrabold uppercase text-[11px]">
+              <th class="py-3 px-2">Entregador</th>
+              <th class="py-3 px-2 text-center">Entregas Finalizadas</th>
+              <th class="py-3 px-2 text-right">Soma das Taxas</th>
+              <th class="py-3 px-2 text-center">Valor Fixo (Diária) R$</th>
+              <th class="py-3 px-2 text-right">Total a Pagar</th>
+              <th class="py-3 px-2 text-center">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="driver-report-table-body" class="divide-y divide-gray-800/80">
+            <!-- Linhas inseridas dinamicamente -->
+          </tbody>
+          <tfoot id="driver-report-table-foot" class="border-t-2 border-gray-800 bg-gray-900/60 font-extrabold">
+            <!-- Totais gerais inseridos dinamicamente -->
+          </tfoot>
+        </table>
+      </div>
+
+      <!-- BOTÕES DE IMPRESSÃO / AJUSTE -->
+      <div class="flex flex-col sm:flex-row justify-between items-center gap-3 pt-3 border-t border-gray-800">
+        <span class="text-xs text-gray-400 font-semibold">* O valor fixo é editável para cada motoboy e o total ajusta em tempo real.</span>
+        <div class="flex gap-2 w-full sm:w-auto">
+          <button onclick="printDriverReport()" class="flex-1 sm:flex-initial py-3 px-4 bg-gray-800 hover:bg-gray-700 text-amber-400 font-extrabold text-xs rounded-xl border border-gray-700 flex items-center justify-center gap-2 transition-all shadow-md active:scale-95">
+            <i data-lucide="printer" class="w-4 h-4"></i> IMPRIMIR RELATÓRIO
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL DE COMPARTILHAMENTO DO APP DO ENTREGADOR -->
+  <div id="modal-driver-app-link" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
+    <div class="glass-card w-full max-w-md rounded-3xl p-6 space-y-5 border border-brand-500/30 shadow-2xl">
+      <div class="flex justify-between items-center pb-3 border-b border-gray-800">
+        <div class="flex items-center space-x-2.5">
+          <div class="w-9 h-9 rounded-2xl bg-brand-500/20 text-brand-400 flex items-center justify-center border border-brand-500/30">
+            <img src="https://cdn-icons-png.flaticon.com/512/2972/2972185.png" alt="Moto" class="w-5 h-5 object-contain" />
+          </div>
+          <h3 class="font-extrabold text-white text-base">App do Entregador</h3>
+        </div>
+        <button onclick="closeDriverAppLinkModal()" class="text-gray-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <div class="space-y-1">
+        <p class="text-xs font-semibold text-gray-200">Link do Aplicativo do Motoboy 🛵</p>
+        <p class="text-[11px] text-gray-400 leading-relaxed">
+          Copie este link ou envie diretamente via WhatsApp para os seus entregadores. Ao abrir este link no celular, eles poderão instalar o app na tela inicial do celular.
+        </p>
+      </div>
+
+      <div class="p-3.5 bg-gray-900 border border-gray-800 rounded-2xl flex items-center justify-between gap-2 shadow-inner">
+        <input type="text" id="input-driver-app-link" readonly class="bg-transparent text-amber-400 text-xs font-mono font-bold w-full focus:outline-none truncate" />
+        <button onclick="copyDriverAppLink()" class="px-3.5 py-2 bg-brand-600 hover:bg-brand-500 text-white font-extrabold text-xs rounded-xl border border-brand-500/50 shrink-0 flex items-center gap-1.5 transition-all shadow-md active:scale-95">
+          <i data-lucide="copy" class="w-3.5 h-3.5"></i> <span id="copy-btn-text">COPIAR</span>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 pt-1">
+        <a id="btn-share-wa-driver-link" href="#" target="_blank" class="py-3.5 px-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-600/20 active:scale-95">
+          <svg class="w-4 h-4 fill-current text-white shrink-0" viewBox="0 0 24 24">
+            <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
+          </svg>
+          <span>ENVIAR WHATSAPP</span>
+        </a>
+
+        <a id="btn-open-driver-tab" href="#" target="_blank" class="py-3.5 px-3 rounded-2xl bg-gray-800 hover:bg-gray-700 text-amber-400 font-extrabold text-xs flex items-center justify-center gap-1.5 border border-gray-700 transition-all active:scale-95">
+          <i data-lucide="external-link" class="w-4 h-4"></i>
+          <span>ABRIR NOVA ABA</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL / POPUP DE DETALHES COMPLETOS DO PEDIDO NO PAINEL ADM -->
+  <div id="modal-order-details-admin" class="fixed inset-0 z-50 hidden flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md">
+    <div class="glass-card w-full max-w-lg rounded-3xl p-5 sm:p-6 space-y-5 border border-gray-800 shadow-2xl max-h-[92vh] overflow-y-auto">
+      
+      <div class="flex justify-between items-start pb-4 border-b border-gray-800">
+        <div>
+          <div class="flex items-center gap-2">
+            <h3 id="admin-modal-order-id" class="text-xl font-extrabold text-white">#PEDIDO</h3>
+            <span id="admin-modal-order-badge" class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-brand-500/20 text-brand-400 border border-brand-500/30">EM PREPARO</span>
+          </div>
+          <p id="admin-modal-order-date" class="text-xs text-gray-400 mt-0.5">Criado em: --/--/---- --:--</p>
+        </div>
+        <button onclick="closeAdminOrderModal()" class="p-2 text-gray-400 hover:text-white rounded-xl hover:bg-gray-800">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div id="admin-modal-change-alert" class="hidden p-3.5 rounded-2xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 text-xs font-bold flex items-center gap-2.5 animate-pulse">
+        <div class="w-8 h-8 rounded-xl bg-emerald-500/30 text-emerald-300 flex items-center justify-center shrink-0">
+          <i data-lucide="banknote" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <div id="admin-modal-change-alert-title" class="font-extrabold text-emerald-200">💵 ATENÇÃO: LEVAR TROCO!</div>
+          <div id="admin-modal-change-alert-subtitle" class="text-[11px] font-medium text-emerald-300/90">Devolver troco ao cliente no ato da entrega.</div>
+        </div>
+      </div>
+
+      <div id="admin-modal-beverage-alert" class="hidden p-3.5 rounded-2xl bg-amber-500/15 border border-amber-500/40 text-amber-300 text-xs font-bold flex items-center gap-2.5 animate-pulse">
+        <div class="w-8 h-8 rounded-xl bg-amber-500/30 text-amber-300 flex items-center justify-center shrink-0">
+          <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <div class="font-extrabold text-amber-200">⚠️ ATENÇÃO: ESTE PEDIDO CONTÉM BEBIDAS!</div>
+          <div class="text-[11px] font-medium text-amber-300/80">Verifique a caixa/bag antes do envio.</div>
+        </div>
+      </div>
+
+      <div class="space-y-2">
+        <h4 class="text-xs font-extrabold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
+          <i data-lucide="user" class="w-3.5 h-3.5 text-brand-500"></i> Dados do Cliente
+        </h4>
+        <div class="p-4 rounded-2xl bg-gray-900/90 border border-gray-800 space-y-3">
+          <div class="flex justify-between items-center">
+            <span id="admin-modal-customer-name" class="font-extrabold text-white text-sm">Nome do Cliente</span>
+            <span id="admin-modal-customer-orders" class="text-[10px] bg-purple-500/15 text-purple-300 px-2 py-0.5 rounded font-bold">1º Pedido</span>
+          </div>
+
+          <a id="admin-modal-whatsapp-link" href="#" target="_blank" class="w-full py-3.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs flex items-center justify-center gap-2.5 transition-all shadow-lg shadow-emerald-600/20 active:scale-95">
+            <svg class="w-5 h-5 fill-current shrink-0 text-white" viewBox="0 0 24 24">
+              <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
+            </svg>
+            <span id="admin-modal-phone-text">FALAR COM CLIENTE VIA WHATSAPP</span>
+          </a>
+        </div>
+      </div>
+
+      <div class="space-y-2">
+        <h4 class="text-xs font-extrabold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
+          <i data-lucide="map-pin" class="w-3.5 h-3.5 text-amber-400"></i> Endereço de Entrega
+        </h4>
+        <div class="p-4 rounded-2xl bg-gray-900/90 border border-gray-800 space-y-3">
+          <div class="space-y-1">
+            <p id="admin-modal-formatted-address" class="text-xs text-gray-200 leading-relaxed font-semibold">Carregando endereço...</p>
+            <p id="admin-modal-address-reference" class="text-[11px] text-amber-300/90 font-medium hidden">Ponto de referência: --</p>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 pt-1">
+            <a id="admin-modal-maps-link" href="#" target="_blank" class="py-3 px-3 rounded-xl bg-gradient-to-r from-amber-600 to-brand-600 hover:from-amber-500 hover:to-brand-500 text-white font-extrabold text-[11px] flex items-center justify-center gap-1.5 transition-all shadow-md active:scale-95">
+              <i data-lucide="map" class="w-4 h-4 text-white shrink-0"></i> GOOGLE MAPS
+            </a>
+
+            <a id="admin-modal-waze-link" href="#" target="_blank" class="py-3 px-3 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-extrabold text-[11px] flex items-center justify-center gap-1.5 transition-all shadow-md active:scale-95">
+              <i data-lucide="navigation-2" class="w-4 h-4 text-white shrink-0"></i> WAZE
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="space-y-2">
+        <h4 class="text-xs font-extrabold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
+          <i data-lucide="credit-card" class="w-3.5 h-3.5 text-cyan-400"></i> Pagamento & Taxa de Entrega
+        </h4>
+        <div class="p-4 rounded-2xl bg-gray-900/90 border border-gray-800 space-y-2.5">
+          <div class="flex justify-between items-center text-xs">
+            <span class="text-gray-400 font-bold">Status do Pagamento:</span>
+            <span id="admin-modal-payment-status" class="font-extrabold px-2.5 py-0.5 rounded text-[11px] bg-emerald-500/20 text-emerald-400">PAGO ONLINE</span>
+          </div>
+          <div class="flex justify-between items-center text-xs border-t border-gray-800 pt-2">
+            <span class="text-gray-400 font-bold">Forma / Meio:</span>
+            <span id="admin-modal-payment-method" class="font-extrabold text-white text-xs">Dinheiro</span>
+          </div>
+
+          <div id="admin-modal-change-container" class="flex justify-between items-center text-xs border-t border-gray-800 pt-2 font-bold">
+            <span class="text-gray-300 flex items-center gap-1.5">
+              <i data-lucide="banknote" class="w-4 h-4 text-emerald-400"></i> Troco:
+            </span>
+            <span id="admin-modal-change-text" class="font-extrabold text-amber-300">sem troco</span>
+          </div>
+          
+          <div class="flex justify-between items-center text-xs border-t border-gray-800 pt-2 font-extrabold bg-emerald-500/10 p-2.5 rounded-xl border border-emerald-500/20">
+            <span class="text-emerald-300 flex items-center gap-1.5">
+              <img src="https://cdn-icons-png.flaticon.com/512/2972/2972185.png" alt="Moto" class="w-4 h-4 object-contain inline" /> Taxa de Entrega do Motoboy:
+            </span>
+            <span id="admin-modal-delivery-fee" class="text-emerald-400 font-extrabold text-sm">R$ 0,00</span>
+          </div>
+
+          <div class="flex justify-between items-center text-sm border-t border-gray-800 pt-2 font-extrabold">
+            <span class="text-gray-300">Valor Total do Pedido:</span>
+            <span id="admin-modal-order-total" class="text-amber-400 text-base">R$ 0,00</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="space-y-2">
+        <h4 class="text-xs font-extrabold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
+          <i data-lucide="shopping-bag" class="w-3.5 h-3.5 text-purple-400"></i> Itens do Pedido
+        </h4>
+        <div id="admin-modal-items-list" class="p-4 rounded-2xl bg-gray-900/90 border border-gray-800 space-y-2 text-xs divide-y divide-gray-800/80">
+          <!-- Inserido dinamicamente -->
+        </div>
+      </div>
+
+      <div id="admin-modal-action-container" class="pt-2">
+        <!-- Inserido dinamicamente -->
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL DE SELEÇÃO E ALOCAÇÃO DE ENTREGADOR -->
+  <div id="modal-assign-driver" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
+    <div class="glass-card w-full max-w-md rounded-3xl p-6 space-y-5 border border-brand-500/30 shadow-2xl">
+      <div class="flex justify-between items-center pb-3 border-b border-gray-800">
+        <div class="flex items-center space-x-2.5">
+          <div class="w-9 h-9 rounded-2xl bg-brand-500/20 text-brand-400 flex items-center justify-center">
+            <img src="https://cdn-icons-png.flaticon.com/512/2972/2972185.png" alt="Moto" class="w-5 h-5 object-contain" />
+          </div>
+          <h3 class="font-extrabold text-white text-base">Alocar Entregador & Despachar</h3>
+        </div>
+        <button onclick="closeAssignModal()" class="text-gray-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <div class="space-y-1">
+        <p id="assign-order-title" class="text-sm font-extrabold text-amber-400">Pedido #0000</p>
+        <p id="assign-customer-text" class="text-xs text-gray-300">Cliente: --</p>
+      </div>
+
+      <div class="space-y-3">
+        <label class="block text-xs font-extrabold text-gray-300">Clique para selecionar o Entregador Online:</label>
+        <div id="online-drivers-selector" class="space-y-2 max-h-56 overflow-y-auto pr-1">
+          <!-- Opções inseridas dinamicamente -->
+        </div>
+      </div>
+
+      <div class="pt-2">
+        <button id="btn-confirm-assign" onclick="confirmAssignAndDispatch()" class="w-full py-3.5 bg-gradient-to-r from-brand-600 via-amber-600 to-brand-500 text-white font-extrabold rounded-2xl text-xs shadow-xl shadow-brand-500/25 flex items-center justify-center gap-2 active:scale-95 transition-all">
+          <i data-lucide="send" class="w-4 h-4"></i> ALOCAR E DESPACHAR PARA O ENTREGADOR
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="p-4 text-center text-xs font-extrabold text-gray-400 border-t border-gray-800">
+    COMPETILIVERY MULTI-TENANT
+  </footer>
+
+  <script>
+    const API_BASE_URL = window.location.origin;
+    let currentStore = null;
+    let currentStoreSettings = { dispatchMode: 'MANUAL_SELECT' };
+    let onlineDriversList = [];
+    let preparingOrdersCache = [];
+    let ongoingOrdersCache = [];
+    let completedOrdersCache = [];
+
+    let pendingAssignOrderCode = null;
+    let selectedDriverPhone = null;
+    let selectedDriverName = null;
+
+    function getStoreSlugFromURL() {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('store')) return urlParams.get('store');
+
+      const pathParts = window.location.pathname.split('/');
+      const storeIdx = pathParts.indexOf('store');
+      if (storeIdx >= 0 && pathParts[storeIdx + 1]) {
+        return pathParts[storeIdx + 1];
+      }
+      return 'competilivery';
+    }
+
+    const currentSlug = getStoreSlugFromURL();
+
+    let driverFixedAllowances = JSON.parse(localStorage.getItem(`fixed_allowances_${currentSlug}`) || '{}');
+
+    function openDriverReportModal() {
+      renderDriverReport();
+      document.getElementById('modal-driver-report').classList.remove('hidden');
+    }
+
+    function closeDriverReportModal() {
+      document.getElementById('modal-driver-report').classList.add('hidden');
+    }
+
+    function updateFixedAllowance(driverKey, valueStr) {
+      const val = parseFloat(valueStr) || 0;
+      driverFixedAllowances[driverKey] = val;
+      localStorage.setItem(`fixed_allowances_${currentSlug}`, JSON.stringify(driverFixedAllowances));
+      renderDriverReport();
+    }
+
+    function printDriverReport() {
+      window.print();
+    }
+
+    function renderDriverReport() {
+      const tbody = document.getElementById('driver-report-table-body');
+      const tfoot = document.getElementById('driver-report-table-foot');
+
+      const driverGroup = {};
+
+      completedOrdersCache.forEach(c => {
+        const driverName = c.driverName || 'Motoboy';
+        const driverPhone = c.driverPhone || '';
+        const key = driverPhone ? `${driverName} (${driverPhone})` : driverName;
+
+        if (!driverGroup[key]) {
+          driverGroup[key] = {
+            name: driverName,
+            phone: driverPhone,
+            key: key,
+            count: 0,
+            totalFees: 0,
+            orders: []
+          };
+        }
+
+        driverGroup[key].count += 1;
+        driverGroup[key].totalFees += (c.deliveryFee || 0);
+        driverGroup[key].orders.push(c);
+      });
+
+      const driversList = Object.values(driverGroup);
+
+      if (driversList.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" class="py-8 text-center text-gray-500 text-xs font-semibold">
+              Nenhuma entrega finalizada encontrada para gerar fechamento no momento.
+            </td>
+          </tr>
+        `;
+        tfoot.innerHTML = '';
+        return;
+      }
+
+      let grandTotalCount = 0;
+      let grandTotalFees = 0;
+      let grandTotalFixed = 0;
+      let grandTotalToPay = 0;
+
+      tbody.innerHTML = driversList.map(d => {
+        const fixedVal = driverFixedAllowances[d.key] || 0;
+        const totalToPay = d.totalFees + fixedVal;
+
+        grandTotalCount += d.count;
+        grandTotalFees += d.totalFees;
+        grandTotalFixed += fixedVal;
+        grandTotalToPay += totalToPay;
+
+        const waMessage = encodeURIComponent(
+          `*FECHAMENTO DE ENTREGAS — ${currentStore ? currentStore.name : 'Loja'}*\n` +
+          `👤 *Entregador:* ${d.name}\n` +
+          `📦 *Qtd. Entregas:* ${d.count}\n` +
+          `🛵 *Soma das Taxas:* R$ ${d.totalFees.toFixed(2)}\n` +
+          `💵 *Valor Fixo (Diária):* R$ ${fixedVal.toFixed(2)}\n` +
+          `💰 *TOTAL A RECEBER:* R$ ${totalToPay.toFixed(2)}`
+        );
+
+        const waLink = d.phone ? `https://wa.me/55${d.phone.replace(/\D/g, '')}?text=${waMessage}` : `https://wa.me/?text=${waMessage}`;
+
+        return `
+          <tr class="hover:bg-gray-800/40 border-b border-gray-800/60">
+            <td class="py-3 px-2 font-extrabold text-white">
+              <div class="flex items-center space-x-2">
+                <img src="https://cdn-icons-png.flaticon.com/512/2972/2972185.png" alt="Moto" class="w-4 h-4 object-contain inline" />
+                <div>
+                  <div class="text-xs font-extrabold">${d.name}</div>
+                  <div class="text-[10px] text-gray-400 font-semibold">${d.phone || 'Sem telefone registrado'}</div>
+                </div>
+              </div>
+            </td>
+            <td class="py-3 px-2 text-center font-extrabold text-amber-400 text-xs">
+              ${d.count} ${d.count === 1 ? 'entrega' : 'entregas'}
+            </td>
+            <td class="py-3 px-2 text-right font-extrabold text-emerald-400 text-xs">
+              R$ ${d.totalFees.toFixed(2)}
+            </td>
+            <td class="py-3 px-2 text-center">
+              <div class="flex items-center justify-center gap-1">
+                <span class="text-gray-400 font-bold text-[11px]">R$</span>
+                <input type="number" step="0.50" min="0" value="${fixedVal}" onchange="updateFixedAllowance('${d.key}', this.value)" class="w-20 bg-gray-900 border border-gray-700 rounded-xl p-1.5 text-center text-amber-300 font-extrabold text-xs focus:outline-none focus:border-brand-500" />
+              </div>
+            </td>
+            <td class="py-3 px-2 text-right font-extrabold text-emerald-400 text-sm bg-emerald-500/10 rounded-xl">
+              R$ ${totalToPay.toFixed(2)}
+            </td>
+            <td class="py-3 px-2 text-center">
+              <a href="${waLink}" target="_blank" class="py-2 px-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-extrabold text-[10px] inline-flex items-center gap-1 shadow-md transition-all active:scale-95">
+                <i data-lucide="send" class="w-3.5 h-3.5"></i> ENVIAR
+              </a>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      tfoot.innerHTML = `
+        <tr class="text-white">
+          <td class="py-4 px-2 text-xs uppercase font-extrabold">TOTAL GERAL DA LOJA</td>
+          <td class="py-4 px-2 text-center font-extrabold text-amber-400 text-sm">${grandTotalCount}</td>
+          <td class="py-4 px-2 text-right font-extrabold text-emerald-400 text-xs">R$ ${grandTotalFees.toFixed(2)}</td>
+          <td class="py-4 px-2 text-center font-extrabold text-amber-300 text-xs">R$ ${grandTotalFixed.toFixed(2)}</td>
+          <td class="py-4 px-2 text-right font-extrabold text-emerald-400 text-base bg-emerald-500/20 rounded-xl border border-emerald-500/40">R$ ${grandTotalToPay.toFixed(2)}</td>
+          <td></td>
+        </tr>
+      `;
+
+      lucide.createIcons();
+    }
+
+    function openDriverAppLinkModal() {
+      const driverAppUrl = `${window.location.origin}/store/${currentSlug}/driver`;
+      document.getElementById('input-driver-app-link').value = driverAppUrl;
+      
+      const waText = encodeURIComponent(`Olá! Segue o link para acessar o App do Entregador da ${currentStore ? currentStore.name : 'loja'}:\n${driverAppUrl}`);
+      document.getElementById('btn-share-wa-driver-link').href = `https://wa.me/?text=${waText}`;
+      document.getElementById('btn-open-driver-tab').href = driverAppUrl;
+      
+      document.getElementById('modal-driver-app-link').classList.remove('hidden');
+    }
+
+    function closeDriverAppLinkModal() {
+      document.getElementById('modal-driver-app-link').classList.add('hidden');
+    }
+
+    function copyDriverAppLink() {
+      const input = document.getElementById('input-driver-app-link');
+      input.select();
+      navigator.clipboard.writeText(input.value);
+      
+      const copyBtnText = document.getElementById('copy-btn-text');
+      copyBtnText.innerText = 'COPIADO! ✓';
+      setTimeout(() => { copyBtnText.innerText = 'COPIAR'; }, 2000);
+    }
+
+    function checkHasBeverage(items) {
+      if (!items || !Array.isArray(items)) return false;
+      const keywords = ['bebida', 'refrigerante', 'coca', 'guaraná', 'guarana', 'suco', 'cerveja', 'chope', 'água', 'agua', 'fanta', 'sprite', 'lata', '600ml', '2l', 'pepsi', 'red bull', 'monster', 'tônica', 'tonica', 'long neck'];
+      return items.some(item => {
+        const nameLower = (item.name || '').toLowerCase();
+        const subOptionsLower = (item.options || []).map(o => (o.name || '').toLowerCase()).join(' ');
+        const combined = nameLower + ' ' + subOptionsLower;
+        return keywords.some(k => combined.includes(k));
+      });
+    }
+
+    function extractChangeDeep(order) {
+      if (!order) return { isCash: false, hasChange: false, changeForVal: 0, changeAmountVal: 0, text: 'sem troco' };
+
+      const primaryMethodObj = order.payments && order.payments.methods && order.payments.methods.length > 0
+        ? order.payments.methods[0]
+        : null;
+
+      let isCashMethod = false;
+
+      if (primaryMethodObj) {
+        const methodStr = (primaryMethodObj.method || '').toUpperCase();
+        const methodInfoStr = (primaryMethodObj.methodInfo || '').toUpperCase();
+
+        if (methodStr === 'CASH' || methodStr === 'DINHEIRO' || methodStr === 'MONEY' ||
+            methodInfoStr.includes('DINHEIRO') || methodInfoStr.includes('CASH')) {
+          isCashMethod = true;
+        }
+      } else {
+        const textCheck = `${order.observation || ''} ${order.note || ''}`.toUpperCase();
+        if (textCheck.includes('DINHEIRO') || textCheck.includes('TROCO')) {
+          isCashMethod = true;
+        }
+      }
+
+      if (!isCashMethod) {
+        return { isCash: false, hasChange: false, changeForVal: 0, changeAmountVal: 0, text: 'sem troco' };
+      }
+
+      let changeForVal = 0;
+      let changeAmountVal = 0;
+
+      if (primaryMethodObj) {
+        if (typeof primaryMethodObj.changeFor === 'number') changeForVal = primaryMethodObj.changeFor;
+        else if (primaryMethodObj.changeFor && typeof primaryMethodObj.changeFor.value === 'number') changeForVal = primaryMethodObj.changeFor.value;
+
+        if (typeof primaryMethodObj.change === 'number') changeAmountVal = primaryMethodObj.change;
+        else if (primaryMethodObj.change && typeof primaryMethodObj.change.value === 'number') changeAmountVal = primaryMethodObj.change.value;
+      }
+
+      const foundText = `${order.observation || ''} ${order.note || ''} ${primaryMethodObj?.methodInfo || ''}`;
+      if (changeForVal === 0 && foundText) {
+        const matchFor = foundText.match(/troco\s+(?:para|p\/|de)?\s*r?\$?\s*(\d+(?:[.,]\d{2})?)/i);
+        if (matchFor && matchFor[1]) {
+          changeForVal = parseFloat(matchFor[1].replace(',', '.'));
+        }
+      }
+
+      const orderTotalVal = order.total && order.total.orderAmount ? order.total.orderAmount.value : 0;
+
+      if (changeAmountVal === 0 && changeForVal > orderTotalVal) {
+        changeAmountVal = changeForVal - orderTotalVal;
+      }
+
+      if (changeForVal > 0 || changeAmountVal > 0) {
+        const calcDiff = changeAmountVal > 0 ? changeAmountVal : (changeForVal - orderTotalVal);
+        return {
+          isCash: true,
+          hasChange: true,
+          changeForVal: changeForVal,
+          changeAmountVal: calcDiff > 0 ? calcDiff : 0,
+          text: `Levar R$ ${(calcDiff > 0 ? calcDiff : 0).toFixed(2)} de troco (para R$ ${changeForVal.toFixed(2)})`
+        };
+      }
+
+      return { isCash: true, hasChange: false, changeForVal: 0, changeAmountVal: 0, text: 'sem troco (Dinheiro trocado)' };
+    }
+
+    function getDeliveryFee(order) {
+      if (!order) return 0;
+
+      function parseVal(v) {
+        if (typeof v === 'number') return v;
+        if (typeof v === 'string') {
+          const clean = v.replace(/[^\d.,]/g, '').replace(',', '.');
+          return parseFloat(clean) || 0;
+        }
+        if (v && typeof v.value === 'number') return v.value;
+        if (v && typeof v.value === 'string') return parseVal(v.value);
+        if (v && typeof v.amount === 'number') return v.amount;
+        return 0;
+      }
+
+      let foundFee = 0;
+
+      if (typeof order.deliveryFee === 'number' && order.deliveryFee > 0) return order.deliveryFee;
+
+      if (order.delivery && order.delivery.deliveryFee) {
+        foundFee = parseVal(order.delivery.deliveryFee);
+        if (foundFee > 0) return foundFee;
+      }
+
+      if (order.deliveryFee) {
+        foundFee = parseVal(order.deliveryFee);
+        if (foundFee > 0) return foundFee;
+      }
+
+      if (order.total) {
+        if (order.total.deliveryFee) {
+          foundFee = parseVal(order.total.deliveryFee);
+          if (foundFee > 0) return foundFee;
+        }
+        if (order.total.otherFees) {
+          foundFee = parseVal(order.total.otherFees);
+          if (foundFee > 0) return foundFee;
+        }
+      }
+
+      if (Array.isArray(order.otherFees)) {
+        for (const f of order.otherFees) {
+          const typeStr = (f.type || f.name || '').toUpperCase();
+          if (typeStr.includes('DELIVERY') || typeStr.includes('ENTREGA') || typeStr.includes('TAXA') || typeStr.includes('FEE')) {
+            foundFee = parseVal(f.price || f.value || f.amount || f);
+            if (foundFee > 0) return foundFee;
+          }
+        }
+      }
+
+      function deepSearchFee(obj, depth = 0) {
+        if (!obj || depth > 4 || foundFee > 0) return;
+        if (typeof obj !== 'object') return;
+
+        for (const [key, val] of Object.entries(obj)) {
+          const kLower = key.toLowerCase();
+          if (kLower === 'deliveryfee' || kLower === 'delivery_fee' || kLower === 'taxaentrega' || kLower === 'taxa_entrega') {
+            const parsed = parseVal(val);
+            if (parsed > 0) {
+              foundFee = parsed;
+              return;
+            }
+          }
+          if (typeof val === 'object' && val !== null) {
+            deepSearchFee(val, depth + 1);
+          }
+        }
+      }
+
+      deepSearchFee(order);
+
+      if (foundFee > 0) return foundFee;
+
+      if (order.total && order.total.orderAmount && Array.isArray(order.items) && order.items.length > 0) {
+        const totalVal = parseVal(order.total.orderAmount);
+        const itemsSubtotal = order.items.reduce((sum, item) => {
+          const itemPrice = parseVal(item.totalPrice) || (parseVal(item.unitPrice) * (item.quantity || 1));
+          return sum + itemPrice;
+        }, 0);
+
+        if (totalVal > itemsSubtotal) {
+          const diff = totalVal - itemsSubtotal;
+          if (diff > 0) return diff;
+        }
+      }
+
+      return 0;
+    }
+
+    function getDeliveryTimeAlert(estimatedDeliveryIso, createdAtIso) {
+      let targetMs = null;
+      if (estimatedDeliveryIso) {
+        targetMs = new Date(estimatedDeliveryIso).getTime();
+      }
+      if (!targetMs || isNaN(targetMs)) {
+        const createdMs = createdAtIso ? new Date(createdAtIso).getTime() : Date.now();
+        targetMs = createdMs + (45 * 60 * 1000);
+      }
+
+      const nowMs = Date.now();
+      const diffMinutes = Math.floor((targetMs - nowMs) / (60 * 1000));
+      const timeFormatted = new Date(targetMs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      if (diffMinutes < 0) {
+        const absMin = Math.abs(diffMinutes);
+        return {
+          badgeText: `🚨 ATRASADO! (${absMin} min)`,
+          cardBorderClass: 'border-l-red-500 border-red-500/50 bg-red-950/20',
+          badgeBgClass: 'bg-red-500/20 text-red-300 font-extrabold animate-pulse'
+        };
+      } else if (diffMinutes <= 10) {
+        return {
+          badgeText: `⚠️ PRÓXIMO DE ATRASAR! (${diffMinutes} min)`,
+          cardBorderClass: 'border-l-amber-500 border-amber-500/50 bg-amber-950/20',
+          badgeBgClass: 'bg-amber-500/20 text-amber-300 font-extrabold animate-pulse'
+        };
+      } else {
+        return {
+          badgeText: `⏱️ Previsão: ${timeFormatted}`,
+          cardBorderClass: 'border-l-brand-500',
+          badgeBgClass: 'bg-gray-800 text-gray-300 font-bold'
+        };
+      }
+    }
+
+    async function fetchAdminOrders() {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/admin/orders?store=${currentSlug}`);
+        const data = await res.json();
+
+        if (!data.success) return;
+
+        currentStore = data.store;
+        currentStoreSettings = data.settings || { dispatchMode: 'MANUAL_SELECT' };
+        onlineDriversList = data.onlineDrivers || [];
+
+        if (currentStore) {
+          document.getElementById('header-store-name').innerText = currentStore.name;
+          document.title = `Painel ADM — ${currentStore.name}`;
+
+          const iconContainer = document.getElementById('header-store-icon');
+          if (iconContainer) {
+            if (currentStore.logoUrl) {
+              iconContainer.innerHTML = `<img src="${currentStore.logoUrl}" alt="${currentStore.name}" class="w-full h-full object-cover rounded-2xl" />`;
+            } else {
+              iconContainer.innerHTML = `<img src="https://cdn-icons-png.flaticon.com/512/2972/2972185.png" alt="Moto" class="w-6 h-6 object-contain" />`;
+            }
+          }
+        }
+
+        updateModeButtons();
+
+        preparingOrdersCache = data.preparingOrders || [];
+        ongoingOrdersCache = data.ongoingDeliveryOrders || [];
+        completedOrdersCache = data.completedOrders || [];
+
+        document.getElementById('count-preparing').innerText = preparingOrdersCache.length;
+        document.getElementById('count-ongoing').innerText = ongoingOrdersCache.length;
+        document.getElementById('count-completed').innerText = completedOrdersCache.length;
+
+        // 1. RENDER EM PREPARO
+        const prepContainer = document.getElementById('list-preparing');
+        if (preparingOrdersCache.length > 0) {
+          prepContainer.innerHTML = preparingOrdersCache.map(o => {
+            const displayId = o.displayId || o.id;
+            const customer = o.customer ? o.customer.name : 'Cliente';
+            const customerPhone = o.customer && o.customer.phone ? o.customer.phone.number : '';
+            const address = o.delivery?.deliveryAddress?.formattedAddress || 'Endereço de Entrega';
+            const total = o.total?.orderAmount?.value ? o.total.orderAmount.value.toFixed(2) : '0.00';
+            const items = o.items || [];
+            const hasDrink = checkHasBeverage(items);
+            const timeInfo = getDeliveryTimeAlert(o.delivery?.estimatedDeliveryDateTime, o.createdAt);
+
+            return `
+              <div onclick="openAdminOrderModal('${displayId}')" class="glass-card p-4 rounded-3xl space-y-3 border-l-4 ${timeInfo.cardBorderClass} shadow-xl cursor-pointer hover:border-amber-400 transition-all group">
+                <div class="flex justify-between items-start">
+                  <div>
+                    <span class="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 font-extrabold text-[10px]">EM PREPARO</span>
+                    <h3 class="text-xl font-extrabold text-white mt-1 group-hover:text-amber-400 transition-colors">#${displayId}</h3>
+                  </div>
+                  <span class="text-sm font-extrabold text-amber-400 bg-amber-500/10 px-3 py-1 rounded-xl border border-amber-500/20">R$ ${total}</span>
+                </div>
+
+                <div class="p-2.5 rounded-xl border text-[11px] flex items-center justify-between ${timeInfo.badgeBgClass}">
+                  <span class="flex items-center gap-1.5"><i data-lucide="clock" class="w-4 h-4 shrink-0"></i> ${timeInfo.badgeText}</span>
+                </div>
+
+                ${hasDrink ? `
+                  <div class="p-2 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-300 text-[11px] font-extrabold flex items-center gap-1.5 animate-pulse">
+                    <i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-amber-400"></i>
+                    <span>⚠️ CONTÉM BEBIDAS!</span>
+                  </div>
+                ` : ''}
+
+                <div class="p-3 bg-gray-900/90 rounded-2xl space-y-1 text-xs border border-gray-800">
+                  <div class="font-extrabold text-white"><i data-lucide="user" class="w-3.5 h-3.5 inline text-brand-500"></i> ${customer} ${customerPhone ? `(${customerPhone})` : ''}</div>
+                  <div class="text-gray-300 text-[11px] leading-relaxed pt-1 border-t border-gray-800/80"><i data-lucide="map-pin" class="w-3.5 h-3.5 inline text-amber-400"></i> ${address}</div>
+                </div>
+
+                <div class="flex gap-2">
+                  <button onclick="event.stopPropagation(); openAdminOrderModal('${displayId}');" class="py-2.5 px-3 bg-gray-800 hover:bg-gray-700 text-amber-400 font-extrabold text-xs rounded-2xl border border-gray-700 flex items-center justify-center gap-1">
+                    <i data-lucide="eye" class="w-4 h-4"></i> Detalhes
+                  </button>
+                  <button onclick="event.stopPropagation(); openAssignModal('${displayId}', '${customer}');" class="flex-1 py-2.5 bg-gradient-to-r from-brand-600 via-amber-600 to-brand-500 text-white font-extrabold text-xs rounded-2xl shadow-lg flex items-center justify-center gap-1.5 active:scale-95 transition-all">
+                    <img src="https://cdn-icons-png.flaticon.com/512/2972/2972185.png" alt="Moto" class="w-4 h-4 object-contain inline" /> ALOCAR ENTREGADOR
+                  </button>
+                </div>
+              </div>
+            `;
+          }).join('');
+        } else {
+          prepContainer.innerHTML = `<div class="glass-card p-6 rounded-3xl text-center text-xs text-gray-400">Nenhum pedido em preparo no momento.</div>`;
+        }
+
+        // 2. RENDER ENTREGANDO
+        const ongContainer = document.getElementById('list-ongoing');
+        if (ongoingOrdersCache.length > 0) {
+          ongContainer.innerHTML = ongoingOrdersCache.map(o => {
+            const displayId = o.displayId || o.id;
+            const customer = o.customer ? o.customer.name : 'Cliente';
+            const driverName = o.assignedDriverName || 'Não Alocado';
+            const address = o.delivery?.deliveryAddress?.formattedAddress || 'Endereço de Entrega';
+            const total = o.total?.orderAmount?.value ? o.total.orderAmount.value.toFixed(2) : '0.00';
+            const items = o.items || [];
+            const hasDrink = checkHasBeverage(items);
+            const timeInfo = getDeliveryTimeAlert(o.delivery?.estimatedDeliveryDateTime, o.createdAt);
+
+            return `
+              <div onclick="openAdminOrderModal('${displayId}')" class="glass-card p-4 rounded-3xl space-y-3 border-l-4 ${timeInfo.cardBorderClass} shadow-xl cursor-pointer hover:border-amber-400 transition-all group">
+                <div class="flex justify-between items-start">
+                  <div>
+                    <span class="px-2.5 py-0.5 rounded-full bg-brand-500/20 text-brand-400 font-extrabold text-[10px]">EM ENTREGA</span>
+                    <h3 class="text-xl font-extrabold text-white mt-1 group-hover:text-amber-400 transition-colors">#${displayId}</h3>
+                  </div>
+                  <span class="text-sm font-extrabold text-amber-400 bg-amber-500/10 px-3 py-1 rounded-xl">R$ ${total}</span>
+                </div>
+
+                <div class="p-2.5 bg-brand-500/15 border border-brand-500/30 rounded-2xl text-xs font-extrabold text-brand-300 flex items-center justify-between">
+                  <span class="flex items-center gap-1.5"><img src="https://cdn-icons-png.flaticon.com/512/2972/2972185.png" alt="Moto" class="w-4 h-4 object-contain inline" /> Entregador: ${driverName}</span>
+                </div>
+
+                ${hasDrink ? `
+                  <div class="p-2 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-300 text-[11px] font-extrabold flex items-center gap-1.5 animate-pulse">
+                    <i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-amber-400"></i>
+                    <span>⚠️ CONTÉM BEBIDAS!</span>
+                  </div>
+                ` : ''}
+
+                <div class="p-3 bg-gray-900/90 rounded-2xl space-y-1 text-xs border border-gray-800">
+                  <div class="font-extrabold text-white"><i data-lucide="user" class="w-3.5 h-3.5 inline text-gray-400"></i> ${customer}</div>
+                  <div class="text-gray-300 text-[11px] leading-relaxed pt-1 border-t border-gray-800/80"><i data-lucide="map-pin" class="w-3.5 h-3.5 inline text-amber-400"></i> ${address}</div>
+                </div>
+
+                <button onclick="event.stopPropagation(); openAdminOrderModal('${displayId}');" class="w-full py-2.5 bg-gray-800 hover:bg-gray-700 text-amber-400 font-extrabold text-xs rounded-2xl border border-gray-700 flex items-center justify-center gap-1">
+                  <i data-lucide="eye" class="w-4 h-4"></i> Ver Detalhes Completos
+                </button>
+              </div>
+            `;
+          }).join('');
+        } else {
+          ongContainer.innerHTML = `<div class="glass-card p-6 rounded-3xl text-center text-xs text-gray-400">Nenhuma entrega em andamento.</div>`;
+        }
+
+        // 3. RENDER FINALIZADOS COM BUSCA E ORDENAÇÃO
+        renderCompletedList();
+
+        lucide.createIcons();
+
+      } catch (err) {}
+    }
+
+    function renderCompletedList() {
+      const compContainer = document.getElementById('list-completed');
+      if (!compContainer) return;
+
+      const searchTerm = (document.getElementById('search-completed-customer')?.value || '').toLowerCase().trim();
+      const sortOrder = document.getElementById('sort-completed-order')?.value || 'desc';
+
+      let list = [...completedOrdersCache];
+
+      if (searchTerm) {
+        list = list.filter(c => 
+          (c.customerName || '').toLowerCase().includes(searchTerm) ||
+          (c.displayId || '').toLowerCase().includes(searchTerm) ||
+          (c.driverName || '').toLowerCase().includes(searchTerm)
+        );
+      }
+
+      list.sort((a, b) => {
+        const timeA = new Date(a.deliveredAt || a.createdAt || 0).getTime();
+        const timeB = new Date(b.deliveredAt || b.createdAt || 0).getTime();
+        return sortOrder === 'asc' ? timeA - timeB : timeB - timeA;
+      });
+
+      if (list.length > 0) {
+        compContainer.innerHTML = list.map(c => `
+          <div onclick="openAdminOrderModal('${c.displayId}')" class="glass-card p-4 rounded-3xl space-y-2 border-l-4 border-l-emerald-500 shadow-lg opacity-90 cursor-pointer hover:border-amber-400 transition-all group">
+            <div class="flex justify-between items-center">
+              <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-extrabold text-[10px]">ENTREGUE</span>
+              <span class="text-xs font-bold text-gray-400">${new Date(c.deliveredAt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} (${new Date(c.deliveredAt).toLocaleDateString([], {day:'2-digit', month:'2-digit'})})</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <h4 class="font-extrabold text-white text-base group-hover:text-amber-400 transition-colors">#${c.displayId}</h4>
+              <span class="font-extrabold text-emerald-400 text-xs">R$ ${(c.total || 0).toFixed(2)}</span>
+            </div>
+            <div class="text-xs text-emerald-300 font-bold"><i data-lucide="user-check" class="w-3.5 h-3.5 inline text-emerald-400"></i> Entregue por ${c.driverName || 'Motoboy'}</div>
+            <div class="text-[11px] text-gray-200 font-extrabold truncate"><i data-lucide="user" class="w-3 h-3 inline text-brand-500"></i> ${c.customerName}</div>
+          </div>
+        `).join('');
+      } else {
+        compContainer.innerHTML = `<div class="glass-card p-6 rounded-3xl text-center text-xs text-gray-400">Nenhum pedido finalizado encontrado com o filtro.</div>`;
+      }
+
+      lucide.createIcons();
+    }
+
+    function openAdminOrderModal(displayId) {
+      let order = preparingOrdersCache.find(o => o.displayId === displayId || o.id === displayId) ||
+                  ongoingOrdersCache.find(o => o.displayId === displayId || o.id === displayId);
+      
+      let isCompleted = false;
+
+      if (!order) {
+        const comp = completedOrdersCache.find(c => c.displayId === displayId);
+        if (comp) {
+          isCompleted = true;
+          order = {
+            displayId: comp.displayId,
+            id: comp.uuid || comp.displayId,
+            customer: { name: comp.customerName },
+            delivery: { deliveryAddress: { formattedAddress: comp.address } },
+            total: { orderAmount: { value: comp.total } },
+            deliveryFee: comp.deliveryFee || 0,
+            createdAt: comp.deliveredAt,
+            assignedDriverName: comp.driverName
+          };
+        }
+      }
+
+      if (!order) return;
+
+      const customerName = order.customer ? order.customer.name : 'Cliente';
+      const rawPhone = order.customer && order.customer.phone ? order.customer.phone.number : '';
+      const cleanPhoneDigits = rawPhone.replace(/\D/g, '');
+      const deliveryObj = order.delivery && order.delivery.deliveryAddress ? order.delivery.deliveryAddress : {};
+      const formattedAddress = deliveryObj.formattedAddress || 'Endereço informado no pedido';
+      const reference = deliveryObj.reference || deliveryObj.complement || '';
+      const coords = deliveryObj.coordinates;
+      const totalVal = order.total && order.total.orderAmount ? order.total.orderAmount.value : 0;
+      const deliveryFeeVal = getDeliveryFee(order);
+      const items = order.items || [];
+      const hasDrink = checkHasBeverage(items);
+      const changeInfo = extractChangeDeep(order);
+
+      document.getElementById('admin-modal-order-id').innerText = `#${order.displayId}`;
+      document.getElementById('admin-modal-order-date').innerText = isCompleted ? `Entregue em: ${new Date(order.createdAt).toLocaleString('pt-BR')}` : `Criado em: ${new Date(order.createdAt || Date.now()).toLocaleString('pt-BR')}`;
+
+      const changeAlert = document.getElementById('admin-modal-change-alert');
+      if (changeInfo.hasChange && !isCompleted) {
+        document.getElementById('admin-modal-change-alert-title').innerText = `💵 ATENÇÃO: LEVAR R$ ${changeInfo.changeAmountVal.toFixed(2)} DE TROCO!`;
+        document.getElementById('admin-modal-change-alert-subtitle').innerText = `O cliente irá pagar em dinheiro com notas para R$ ${changeInfo.changeForVal.toFixed(2)}. Devolver o troco!`;
+        changeAlert.classList.remove('hidden');
+      } else {
+        changeAlert.classList.add('hidden');
+      }
+
+      const beverageAlert = document.getElementById('admin-modal-beverage-alert');
+      if (hasDrink && !isCompleted) {
+        beverageAlert.classList.remove('hidden');
+      } else {
+        beverageAlert.classList.add('hidden');
+      }
+
+      document.getElementById('admin-modal-customer-name').innerText = customerName;
+      document.getElementById('admin-modal-customer-orders').innerText = `${order.customer?.ordersCountOnMerchant || 1}º Pedido na loja`;
+
+      const whatsappBtn = document.getElementById('admin-modal-whatsapp-link');
+      if (cleanPhoneDigits) {
+        const phoneFormatted = cleanPhoneDigits.startsWith('55') ? cleanPhoneDigits : `55${cleanPhoneDigits}`;
+        const waMsg = encodeURIComponent(`Olá ${customerName}, referente ao seu pedido #${order.displayId} da ${currentStore ? currentStore.name : 'loja'}...`);
+        whatsappBtn.href = `https://wa.me/${phoneFormatted}?text=${waMsg}`;
+        document.getElementById('admin-modal-phone-text').innerText = `FALAR COM CLIENTE VIA WHATSAPP`;
+        whatsappBtn.classList.remove('pointer-events-none', 'opacity-50');
+      } else {
+        whatsappBtn.href = '#';
+        document.getElementById('admin-modal-phone-text').innerText = `TELEFONE NÃO INFORMADO`;
+        whatsappBtn.classList.add('pointer-events-none', 'opacity-50');
+      }
+
+      const mapsBtn = document.getElementById('admin-modal-maps-link');
+      const wazeBtn = document.getElementById('admin-modal-waze-link');
+      document.getElementById('admin-modal-formatted-address').innerText = formattedAddress;
+
+      const refElem = document.getElementById('admin-modal-address-reference');
+      if (reference) {
+        refElem.innerText = `Ponto de referência/Complemento: ${reference}`;
+        refElem.classList.remove('hidden');
+      } else {
+        refElem.classList.add('hidden');
+      }
+
+      if (coords && coords.latitude && coords.longitude) {
+        mapsBtn.href = `https://www.google.com/maps/dir/?api=1&destination=${coords.latitude},${coords.longitude}`;
+        wazeBtn.href = `https://waze.com/ul?ll=${coords.latitude},${coords.longitude}&navigate=yes`;
+      } else {
+        mapsBtn.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(formattedAddress)}`;
+        wazeBtn.href = `https://waze.com/ul?q=${encodeURIComponent(formattedAddress)}&navigate=yes`;
+      }
+
+      const payments = order.payments;
+      const isPrepaid = payments && payments.prepaid > 0;
+      const methodInfo = payments && payments.methods && payments.methods.length > 0 ? payments.methods[0].methodInfo || payments.methods[0].method : 'Forma informada no pedido';
+
+      const statusElem = document.getElementById('admin-modal-payment-status');
+      if (isCompleted) {
+        statusElem.className = 'font-extrabold px-2.5 py-0.5 rounded text-[11px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+        statusElem.innerText = '✅ PEDIDO FINALIZADO';
+      } else if (isPrepaid) {
+        statusElem.className = 'font-extrabold px-2.5 py-0.5 rounded text-[11px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+        statusElem.innerText = '🟢 PAGO ONLINE (NÃO COBRAR)';
+      } else {
+        statusElem.className = 'font-extrabold px-2.5 py-0.5 rounded text-[11px] bg-amber-500/20 text-amber-300 border border-amber-500/30';
+        statusElem.innerText = '🔴 COBRAR NO ATO DA ENTREGA';
+      }
+
+      document.getElementById('admin-modal-payment-method').innerText = methodInfo;
+      
+      const changeTextElem = document.getElementById('admin-modal-change-text');
+      changeTextElem.innerText = changeInfo.text;
+      if (changeInfo.hasChange && !isCompleted) {
+        changeTextElem.className = 'font-extrabold text-emerald-300 bg-emerald-500/20 px-2.5 py-1 rounded-lg border border-emerald-500/30 animate-pulse';
+      } else {
+        changeTextElem.className = 'font-semibold text-gray-400';
+      }
+
+      const feeElem = document.getElementById('admin-modal-delivery-fee');
+      if (deliveryFeeVal > 0) {
+        feeElem.innerText = `R$ ${deliveryFeeVal.toFixed(2)}`;
+      } else {
+        feeElem.innerText = `R$ 0,00 (Sem taxa extra)`;
+      }
+
+      document.getElementById('admin-modal-order-total').innerText = `R$ ${totalVal.toFixed(2)}`;
+
+      const itemsContainer = document.getElementById('admin-modal-items-list');
+      if (items.length > 0) {
+        itemsContainer.innerHTML = items.map(i => {
+          const itemTotal = i.totalPrice ? i.totalPrice.value : (i.unitPrice ? i.unitPrice.value * i.quantity : 0);
+          return `
+            <div class="pt-2 first:pt-0">
+              <div class="flex justify-between font-extrabold text-white text-xs">
+                <span>${i.quantity}x ${i.name}</span>
+                <span class="text-amber-400">R$ ${itemTotal.toFixed(2)}</span>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } else {
+        itemsContainer.innerHTML = `<div class="text-gray-400 text-xs">Detalhes do pedido #${order.displayId}.</div>`;
+      }
+
+      const actionContainer = document.getElementById('admin-modal-action-container');
+      if (isCompleted) {
+        actionContainer.innerHTML = `
+          <div class="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl text-center text-xs font-extrabold text-emerald-400">
+            ✓ ENTREGA JÁ CONCLUÍDA POR ${order.assignedDriverName || 'Motoboy'}
+          </div>
+        `;
+      } else {
+        actionContainer.innerHTML = `
+          <button
+            onclick="closeAdminOrderModal(); openAssignModal('${order.displayId}', '${customerName}');"
+            class="w-full py-3.5 bg-gradient-to-r from-brand-600 via-amber-600 to-brand-500 hover:from-brand-500 hover:to-amber-500 text-white font-extrabold text-xs rounded-2xl shadow-xl shadow-brand-600/25 flex items-center justify-center space-x-2 transition-all active:scale-95"
+          >
+            <img src="https://cdn-icons-png.flaticon.com/512/2972/2972185.png" alt="Moto" class="w-4 h-4 object-contain inline" />
+            <span>ALOCAR & DESPACHAR PARA O ENTREGADOR</span>
+          </button>
+        `;
+      }
+
+      lucide.createIcons();
+      document.getElementById('modal-order-details-admin').classList.remove('hidden');
+    }
+
+    function closeAdminOrderModal() {
+      document.getElementById('modal-order-details-admin').classList.add('hidden');
+    }
+
+    function updateModeButtons() {
+      const autoBtn = document.getElementById('btn-mode-auto');
+      const manualBtn = document.getElementById('btn-mode-manual');
+
+      if (currentStoreSettings.dispatchMode === 'AUTO_SINGLE') {
+        autoBtn.className = 'px-3 py-1.5 rounded-xl font-bold transition-all bg-brand-600 text-white shadow-md';
+        manualBtn.className = 'px-3 py-1.5 rounded-xl font-bold transition-all text-gray-400';
+      } else {
+        manualBtn.className = 'px-3 py-1.5 rounded-xl font-bold transition-all bg-brand-600 text-white shadow-md';
+        autoBtn.className = 'px-3 py-1.5 rounded-xl font-bold transition-all text-gray-400';
+      }
+    }
+
+    async function setDispatchMode(mode) {
+      currentStoreSettings.dispatchMode = mode;
+      updateModeButtons();
+      try {
+        await fetch(`${API_BASE_URL}/api/admin/settings?store=${currentSlug}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ dispatchMode: mode })
+        });
+      } catch (err) {}
+      fetchAdminOrders();
+    }
+
+    function selectDriverForAssign(phone, name, element) {
+      selectedDriverPhone = phone;
+      selectedDriverName = name;
+
+      document.querySelectorAll('.driver-card-option').forEach(el => {
+        el.classList.remove('border-brand-500', 'bg-brand-500/20', 'ring-2', 'ring-brand-500');
+        el.classList.add('border-gray-700', 'bg-gray-900');
+        const iconCheck = el.querySelector('.icon-check');
+        if (iconCheck) iconCheck.classList.add('hidden');
+      });
+
+      element.classList.remove('border-gray-700', 'bg-gray-900');
+      element.classList.add('border-brand-500', 'bg-brand-500/20', 'ring-2', 'ring-brand-500');
+      const iconCheck = element.querySelector('.icon-check');
+      if (iconCheck) iconCheck.classList.remove('hidden');
+    }
+
+    function openAssignModal(orderCode, customerName) {
+      pendingAssignOrderCode = orderCode;
+      document.getElementById('assign-order-title').innerText = `Pedido #${orderCode}`;
+      document.getElementById('assign-customer-text').innerText = `Cliente: ${customerName}`;
+
+      const selector = document.getElementById('online-drivers-selector');
+      const btnConfirm = document.getElementById('btn-confirm-assign');
+
+      if (onlineDriversList && onlineDriversList.length > 0) {
+        selectedDriverPhone = onlineDriversList[0].phone;
+        selectedDriverName = onlineDriversList[0].name;
+
+        btnConfirm.disabled = false;
+        btnConfirm.className = 'w-full py-3.5 bg-gradient-to-r from-brand-600 via-amber-600 to-brand-500 text-white font-extrabold rounded-2xl text-xs shadow-xl shadow-brand-500/25 flex items-center justify-center gap-2 active:scale-95 transition-all';
+
+        selector.innerHTML = onlineDriversList.map((d, index) => `
+          <div onclick="selectDriverForAssign('${d.phone}', '${d.name}', this)" class="driver-card-option p-3.5 rounded-2xl border flex items-center justify-between cursor-pointer transition-all ${index === 0 ? 'border-brand-500 bg-brand-500/20 ring-2 ring-brand-500' : 'border-gray-700 bg-gray-900 hover:border-brand-500/50'}">
+            <div class="flex items-center space-x-3">
+              <div class="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold shrink-0">
+                <img src="https://cdn-icons-png.flaticon.com/512/2972/2972185.png" alt="Moto" class="w-5 h-5 object-contain" />
+              </div>
+              <div>
+                <div class="font-extrabold text-white text-xs">${d.name}</div>
+                <div class="text-[10px] text-emerald-400 font-semibold flex items-center gap-1 mt-0.5">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Online (${d.phone})
+                </div>
+              </div>
+            </div>
+            <i data-lucide="check-circle-2" class="icon-check w-5 h-5 text-brand-400 shrink-0 ${index === 0 ? '' : 'hidden'}"></i>
+          </div>
+        `).join('');
+      } else {
+        selectedDriverPhone = null;
+        selectedDriverName = null;
+
+        btnConfirm.disabled = true;
+        btnConfirm.className = 'w-full py-3.5 bg-gray-800 text-gray-500 font-extrabold rounded-2xl text-xs cursor-not-allowed border border-gray-700 opacity-60 flex items-center justify-center gap-2';
+
+        selector.innerHTML = `
+          <div class="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-extrabold text-center space-y-2">
+            <div class="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center mx-auto">
+              <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+            </div>
+            <div class="font-extrabold text-amber-200 text-xs">Nenhum entregador online no aplicativo desta loja!</div>
+            <p class="text-[11px] font-normal text-amber-300/80 leading-relaxed">
+              Envie o link do App do Entregador desta loja para que o motoboy faça login e apareça aqui.
+            </p>
+          </div>
+        `;
+      }
+
+      lucide.createIcons();
+      document.getElementById('modal-assign-driver').classList.remove('hidden');
+    }
+
+    function closeAssignModal() {
+      pendingAssignOrderCode = null;
+      document.getElementById('modal-assign-driver').classList.add('hidden');
+    }
+
+    async function confirmAssignAndDispatch() {
+      if (!pendingAssignOrderCode || !selectedDriverPhone) return;
+
+      const btn = document.getElementById('btn-confirm-assign');
+      btn.disabled = true;
+      btn.innerText = 'DESPACHANDO...';
+
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/admin/assign-and-dispatch?store=${currentSlug}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderCode: pendingAssignOrderCode,
+            driverPhone: selectedDriverPhone,
+            driverName: selectedDriverName
+          })
+        });
+        await res.json();
+        closeAssignModal();
+        fetchAdminOrders();
+      } catch (err) {
+        closeAssignModal();
+        fetchAdminOrders();
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'ALOCAR E DESPACHAR PARA O ENTREGADOR';
+      }
+    }
+
+    window.onload = function() {
+      fetchAdminOrders();
+      setInterval(fetchAdminOrders, 2000);
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Super Admin — Gestão de Lojas CompetiLivery SaaS</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: { 500: '#ff5500', 600: '#e64500', 700: '#cc3700' },
+            dark: { 900: '#090d16', 800: '#111827', 700: '#1f2937' }
+          },
+          fontFamily: { sans: ['Outfit', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <style>
+    .glass-card {
+      background: rgba(17, 24, 39, 0.94);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+  </style>
+</head>
+<body class="bg-dark-900 text-white min-h-screen flex flex-col justify-between font-sans antialiased">
+
+  <!-- Header Super Admin -->
+  <header class="p-4 bg-gray-900/90 backdrop-blur-md border-b border-gray-800 sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-purple-600 via-brand-600 to-amber-500 flex items-center justify-center text-white shadow-lg shadow-purple-500/20">
+          <i data-lucide="crown" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <h1 class="font-extrabold text-white text-base sm:text-lg leading-none">Super Admin SaaS — Gestão de Lojas Clientes</h1>
+          <span class="text-xs text-purple-400 font-semibold flex items-center gap-1 mt-0.5">
+            <span class="w-2 h-2 rounded-full bg-purple-500 animate-pulse"></span> Painel Master do Proprietário
+          </span>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-3">
+        <button onclick="openNewStoreModal()" class="px-4 py-2.5 bg-gradient-to-r from-brand-600 via-amber-600 to-brand-500 hover:from-brand-500 hover:to-amber-500 text-white font-extrabold rounded-2xl text-xs flex items-center gap-2 shadow-lg shadow-brand-600/20 active:scale-95 transition-all border border-amber-400/30">
+          <i data-lucide="plus-circle" class="w-4 h-4"></i>
+          <span>CADASTRA NOVA LOJA</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Conteúdo Principal -->
+  <main class="max-w-7xl w-full mx-auto p-4 sm:p-6 flex-1 space-y-6">
+
+    <!-- Cards Métricas Gerais -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="glass-card p-5 rounded-3xl space-y-2 border border-purple-500/20">
+        <div class="flex justify-between items-center text-xs text-gray-400 font-bold">
+          <span>TOTAL DE LOJAS CLIENTES</span>
+          <i data-lucide="store" class="w-4 h-4 text-purple-400"></i>
+        </div>
+        <div id="stat-total-stores" class="text-3xl font-extrabold text-white">0</div>
+        <p class="text-[11px] text-gray-400">Lojas cadastradas na plataforma</p>
+      </div>
+
+      <div class="glass-card p-5 rounded-3xl space-y-2 border border-emerald-500/20">
+        <div class="flex justify-between items-center text-xs text-gray-400 font-bold">
+          <span>INTEGRAÇÕES DELIVERYVIP ATIVAS</span>
+          <i data-lucide="plug-zap" class="w-4 h-4 text-emerald-400"></i>
+        </div>
+        <div id="stat-active-integrations" class="text-3xl font-extrabold text-emerald-400">0</div>
+        <p class="text-[11px] text-emerald-400/80">Sincronizando entregas via API Merchant V3</p>
+      </div>
+
+      <div class="glass-card p-5 rounded-3xl space-y-2 border border-amber-500/20">
+        <div class="flex justify-between items-center text-xs text-gray-400 font-bold">
+          <span>MOTOBOYS ONLINE (GLOBAL)</span>
+          <i data-lucide="bike" class="w-4 h-4 text-amber-400"></i>
+        </div>
+        <div id="stat-online-drivers" class="text-3xl font-extrabold text-amber-400">0</div>
+        <p class="text-[11px] text-amber-400/80">Entregadores ativos em todas as lojas</p>
+      </div>
+    </div>
+
+    <!-- Tabela / Lista de Lojas Clientes -->
+    <div class="glass-card rounded-3xl p-6 space-y-4 border border-gray-800 shadow-2xl">
+      <div class="flex justify-between items-center pb-3 border-b border-gray-800">
+        <div>
+          <h3 class="text-lg font-extrabold text-white">Lojas Clientes Cadastradas</h3>
+          <p class="text-xs text-gray-400 mt-0.5">Gerencie os Merchant IDs da DeliveryVip e acesse os links exclusivos de cada loja.</p>
+        </div>
+        <button onclick="fetchSaaSStores()" class="p-2 text-gray-400 hover:text-white bg-gray-800 rounded-xl border border-gray-700">
+          <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div id="stores-list-container" class="space-y-4">
+        <div class="text-center py-12 text-gray-500 text-xs">Carregando lista de lojas clientes...</div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- MODAL DE CADASTRO / EDIÇÃO DE LOJA CLIENTE -->
+  <div id="modal-store-form" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
+    <div class="glass-card w-full max-w-lg rounded-3xl p-6 space-y-5 border border-purple-500/30 shadow-2xl">
+      <div class="flex justify-between items-center pb-3 border-b border-gray-800">
+        <div class="flex items-center space-x-2.5">
+          <div class="w-9 h-9 rounded-2xl bg-purple-500/20 text-purple-400 flex items-center justify-center">
+            <i data-lucide="store" class="w-5 h-5"></i>
+          </div>
+          <h3 id="form-modal-title" class="font-extrabold text-white text-base">Cadastrar Nova Loja Cliente</h3>
+        </div>
+        <button onclick="closeStoreFormModal()" class="text-gray-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <form onsubmit="saveStoreSubmit(event)" class="space-y-4 text-xs">
+        <input type="hidden" id="form-store-id" />
+
+        <div>
+          <label class="block text-gray-300 font-extrabold mb-1.5">Nome da Loja Cliente *</label>
+          <input type="text" id="form-store-name" required oninput="generateSlugFromStoreName()" placeholder="Ex: Pizzaria Bella Italia" class="w-full bg-gray-900 border border-gray-700 rounded-2xl p-3.5 text-white font-semibold focus:outline-none focus:border-brand-500 text-xs" />
+        </div>
+
+        <div>
+          <label class="block text-gray-300 font-extrabold mb-1.5">URL do Logotipo da Loja (Imagem/Logo)</label>
+          <input type="url" id="form-store-logo" placeholder="Ex: https://link-da-imagem-logo.png" class="w-full bg-gray-900 border border-gray-700 rounded-2xl p-3.5 text-white font-semibold focus:outline-none focus:border-brand-500 text-xs" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-gray-300 font-extrabold mb-1.5">Slug da URL (gerado automático)</label>
+            <input type="text" id="form-store-slug" required placeholder="pizzaria-bella-italia" class="w-full bg-gray-900 border border-gray-700 rounded-2xl p-3.5 text-amber-400 font-mono font-bold focus:outline-none text-xs" />
+          </div>
+
+          <div>
+            <label class="block text-gray-300 font-extrabold mb-1.5">Email do Lojista Responsável *</label>
+            <input type="email" id="form-store-email" required placeholder="contato@bellaitalia.com.br" class="w-full bg-gray-900 border border-gray-700 rounded-2xl p-3.5 text-white font-semibold focus:outline-none focus:border-brand-500 text-xs" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-gray-300 font-extrabold mb-1.5">Merchant ID da DeliveryVip (Loja) *</label>
+          <input type="text" id="form-store-merchant-id" required placeholder="Ex: 11c151b6-01b8-4d9a-8cb4-d8cedbe3412d" class="w-full bg-gray-900 border border-gray-700 rounded-2xl p-3.5 text-emerald-400 font-mono font-extrabold focus:outline-none focus:border-emerald-500 text-xs" />
+          <p class="text-[10px] text-gray-400 mt-1">Este é o ID da loja na API Merchant V3 da DeliveryVip para puxar os pedidos.</p>
+        </div>
+
+        <div class="p-3 bg-gray-900/80 rounded-2xl border border-gray-800 space-y-3">
+          <span class="text-xs font-bold text-gray-300 block">Credenciais OAuth DeliveryVip (Opcional — Usar Padrão do Sistema se Vazio)</span>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[11px] text-gray-400 font-semibold mb-1">Client ID</label>
+              <input type="text" id="form-store-client-id" placeholder="Padrão do Sistema" class="w-full bg-black/40 border border-gray-800 rounded-xl p-2.5 text-white font-mono text-[11px]" />
+            </div>
+            <div>
+              <label class="block text-[11px] text-gray-400 font-semibold mb-1">Client Secret</label>
+              <input type="password" id="form-store-client-secret" placeholder="Padrão do Sistema" class="w-full bg-black/40 border border-gray-800 rounded-xl p-2.5 text-white font-mono text-[11px]" />
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" class="w-full py-4 bg-gradient-to-r from-purple-600 via-brand-600 to-amber-600 hover:from-purple-500 hover:to-amber-500 text-white font-extrabold rounded-2xl text-xs shadow-xl shadow-purple-600/25 flex items-center justify-center gap-2 active:scale-95 transition-all">
+          <i data-lucide="check-circle-2" class="w-4 h-4"></i> SALVAR LOJA E GERAR LINKS
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <footer class="p-4 text-center text-xs font-extrabold text-gray-400 border-t border-gray-800">
+    COMPETILIVERY SAAS PLATFORM
+  </footer>
+
+  <script>
+    let storesCache = [];
+
+    function generateSlugFromStoreName() {
+      const name = document.getElementById('form-store-name').value;
+      const slug = name.toLowerCase()
+                       .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                       .replace(/[^a-z0-9]+/g, '-')
+                       .replace(/^-+|-+$/g, '');
+      document.getElementById('form-store-slug').value = slug;
+    }
+
+    function openNewStoreModal() {
+      document.getElementById('form-store-id').value = '';
+      document.getElementById('form-store-name').value = '';
+      document.getElementById('form-store-logo').value = '';
+      document.getElementById('form-store-slug').value = '';
+      document.getElementById('form-store-email').value = '';
+      document.getElementById('form-store-merchant-id').value = '';
+      document.getElementById('form-store-client-id').value = '';
+      document.getElementById('form-store-client-secret').value = '';
+      document.getElementById('form-modal-title').innerText = 'Cadastrar Nova Loja Cliente';
+      document.getElementById('modal-store-form').classList.remove('hidden');
+    }
+
+    function closeStoreFormModal() {
+      document.getElementById('modal-store-form').classList.add('hidden');
+    }
+
+    function copyToClipboard(text, btnElement) {
+      navigator.clipboard.writeText(text);
+      const originalHtml = btnElement.innerHTML;
+      btnElement.innerHTML = `✓ COPIADO!`;
+      setTimeout(() => { btnElement.innerHTML = originalHtml; }, 2000);
+    }
+
+    async function fetchSaaSStores() {
+      try {
+        const res = await fetch('/api/saas/stores');
+        const data = await res.json();
+
+        if (!data || !data.success) return;
+
+        storesCache = data.stores || [];
+        
+        const totalEl = document.getElementById('stat-total-stores');
+        const activeEl = document.getElementById('stat-active-integrations');
+        const onlineEl = document.getElementById('stat-online-drivers');
+        const container = document.getElementById('stores-list-container');
+
+        if (totalEl) totalEl.innerText = storesCache.length;
+        if (activeEl) activeEl.innerText = storesCache.filter(s => s.status === 'ACTIVE').length;
+        if (onlineEl) onlineEl.innerText = data.onlineDriversCount || 0;
+
+        if (!container) return;
+
+        const origin = window.location.origin;
+
+        if (storesCache.length > 0) {
+          container.innerHTML = storesCache.map(store => {
+            const adminUrl = `${origin}/store/${store.slug}/admin`;
+            const driverUrl = `${origin}/store/${store.slug}/driver`;
+            const waTextAdmin = encodeURIComponent(`Olá! Segue o seu link de acesso ao Painel de Gestão da loja ${store.name}:\n${adminUrl}`);
+            const waTextDriver = encodeURIComponent(`Olá! Segue o link para os entregadores da loja ${store.name} baixarem o app:\n${driverUrl}`);
+
+            const logoHtml = store.logoUrl 
+              ? `<img src="${store.logoUrl}" alt="${store.name}" class="w-11 h-11 rounded-2xl object-cover border border-amber-400/30 shadow-md shrink-0 bg-black" />`
+              : `<div class="w-11 h-11 rounded-2xl bg-brand-500/20 text-brand-400 border border-brand-500/30 flex items-center justify-center font-extrabold text-sm shrink-0">${store.name.substring(0, 2).toUpperCase()}</div>`;
+
+            return `
+              <div class="p-5 rounded-3xl bg-gray-900/90 border border-gray-800 space-y-4 hover:border-purple-500/40 transition-all">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-gray-800">
+                  <div class="flex items-center space-x-3">
+                    ${logoHtml}
+                    <div>
+                      <h4 class="font-extrabold text-white text-base flex items-center gap-2">
+                        ${store.name}
+                      </h4>
+                      <span class="text-xs text-emerald-400 font-mono font-semibold flex items-center gap-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> ID: ${store.merchantId}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center space-x-2">
+                    <span class="px-3 py-1 rounded-full text-[10px] font-extrabold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 uppercase">ATIVO</span>
+                    <button onclick="editStore('${store.id}')" class="p-2 text-gray-400 hover:text-white bg-gray-800 rounded-xl border border-gray-700"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                  
+                  <!-- BOX 1: PAINEL DA LOJA -->
+                  <div class="p-4 rounded-2xl bg-black/50 border border-gray-800 space-y-2">
+                    <div class="flex items-center justify-between">
+                      <span class="font-bold text-amber-400 flex items-center gap-1.5">
+                        <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Painel ADM da Loja
+                      </span>
+                      <span class="text-[10px] text-gray-500 font-mono font-bold">EXCLUSIVO</span>
+                    </div>
+                    <div class="p-2.5 bg-gray-900 rounded-xl border border-gray-800 font-mono text-[11px] text-gray-300 truncate">
+                      ${adminUrl}
+                    </div>
+                    <div class="flex gap-2 pt-1">
+                      <button onclick="copyToClipboard('${adminUrl}', this)" class="flex-1 py-2 px-3 bg-gray-800 hover:bg-gray-700 text-amber-400 font-extrabold text-[11px] rounded-xl border border-gray-700 flex items-center justify-center gap-1">
+                        <i data-lucide="copy" class="w-3.5 h-3.5"></i> COPIAR LINK
+                      </button>
+                      <a href="${adminUrl}" target="_blank" class="py-2 px-3 bg-brand-600 hover:bg-brand-500 text-white font-extrabold text-[11px] rounded-xl flex items-center justify-center gap-1 shadow-md">
+                        <i data-lucide="external-link" class="w-3.5 h-3.5"></i> ABRIR PAINEL
+                      </a>
+                      <a href="https://wa.me/?text=${waTextAdmin}" target="_blank" class="py-2 px-3 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-[11px] rounded-xl flex items-center justify-center gap-1 shadow-md">
+                        <i data-lucide="send" class="w-3.5 h-3.5"></i> WHATSAPP
+                      </a>
+                    </div>
+                  </div>
+
+                  <!-- BOX 2: APP DO ENTREGADOR -->
+                  <div class="p-4 rounded-2xl bg-black/50 border border-gray-800 space-y-2">
+                    <div class="flex items-center justify-between">
+                      <span class="font-bold text-brand-400 flex items-center gap-1.5">
+                        <img src="https://cdn-icons-png.flaticon.com/512/2972/2972185.png" alt="Moto" class="w-4 h-4 object-contain inline" /> App do Entregador
+                      </span>
+                      <span class="text-[10px] text-gray-500 font-mono font-bold">PWA MOTOBOY</span>
+                    </div>
+                    <div class="p-2.5 bg-gray-900 rounded-xl border border-gray-800 font-mono text-[11px] text-gray-300 truncate">
+                      ${driverUrl}
+                    </div>
+                    <div class="flex gap-2 pt-1">
+                      <button onclick="copyToClipboard('${driverUrl}', this)" class="flex-1 py-2 px-3 bg-gray-800 hover:bg-gray-700 text-brand-400 font-extrabold text-[11px] rounded-xl border border-gray-700 flex items-center justify-center gap-1">
+                        <i data-lucide="copy" class="w-3.5 h-3.5"></i> COPIAR LINK
+                      </button>
+                      <a href="${driverUrl}" target="_blank" class="py-2 px-3 bg-purple-600 hover:bg-purple-500 text-white font-extrabold text-[11px] rounded-xl flex items-center justify-center gap-1 shadow-md">
+                        <i data-lucide="external-link" class="w-3.5 h-3.5"></i> ABRIR APP
+                      </a>
+                      <a href="https://wa.me/?text=${waTextDriver}" target="_blank" class="py-2 px-3 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-[11px] rounded-xl flex items-center justify-center gap-1 shadow-md">
+                        <i data-lucide="send" class="w-3.5 h-3.5"></i> WHATSAPP
+                      </a>
+                    </div>
+                  </div>
+
+                </div>
+
+              </div>
+            `;
+          }).join('');
+        } else {
+          container.innerHTML = `
+            <div class="text-center py-12 text-gray-500 text-xs">Nenhuma loja cadastrada ainda. Clique em "CADASTRAR NOVA LOJA" acima.</div>
+          `;
+        }
+
+        if (window.lucide && typeof lucide.createIcons === 'function') {
+          lucide.createIcons();
+        }
+
+      } catch (err) {
+        console.error('Erro ao buscar lojas:', err);
+      }
+    }
+
+    function editStore(storeId) {
+      const store = storesCache.find(s => s.id === storeId);
+      if (!store) return;
+
+      document.getElementById('form-store-id').value = store.id;
+      document.getElementById('form-store-name').value = store.name;
+      document.getElementById('form-store-logo').value = store.logoUrl || '';
+      document.getElementById('form-store-slug').value = store.slug;
+      document.getElementById('form-store-email').value = store.ownerEmail || '';
+      document.getElementById('form-store-merchant-id').value = store.merchantId;
+      document.getElementById('form-store-client-id').value = store.clientId || '';
+      document.getElementById('form-store-client-secret').value = store.clientSecret || '';
+      document.getElementById('form-modal-title').innerText = 'Editar Loja Cliente';
+
+      document.getElementById('modal-store-form').classList.remove('hidden');
+    }
+
+    async function saveStoreSubmit(e) {
+      e.preventDefault();
+      const id = document.getElementById('form-store-id').value;
+      const name = document.getElementById('form-store-name').value.trim();
+      const logoUrl = document.getElementById('form-store-logo').value.trim();
+      const slug = document.getElementById('form-store-slug').value.trim();
+      const email = document.getElementById('form-store-email').value.trim();
+      const merchantId = document.getElementById('form-store-merchant-id').value.trim();
+      const clientId = document.getElementById('form-store-client-id').value.trim();
+      const clientSecret = document.getElementById('form-store-client-secret').value.trim();
+
+      try {
+        const res = await fetch('/api/saas/stores/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, name, logoUrl, slug, ownerEmail: email, merchantId, clientId, clientSecret })
+        });
+        await res.json();
+        closeStoreFormModal();
+        fetchSaaSStores();
+      } catch (err) {
+        alert('Erro ao salvar a loja cliente');
+      }
+    }
+
+    window.onload = function() {
+      fetchSaaSStores();
+      setInterval(fetchSaaSStores, 2000);
+    };
+  </script>
+</body>
+</html>
