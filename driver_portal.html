@@ -86,8 +86,11 @@
         </div>
       </div>
 
-      <!-- Motoboy Profile Status / Refresh -->
+      <!-- Motoboy Profile Status / Settings / Refresh -->
       <div class="flex items-center space-x-2 sm:space-x-3">
+        <button onclick="toggleApiConfigModal()" class="p-2 sm:p-2.5 text-amber-400 hover:text-white bg-gray-800/80 hover:bg-gray-700 rounded-xl border border-amber-500/30 transition-all" title="Configurar Conexão do Servidor (API)">
+          <i data-lucide="settings" class="w-4 h-4"></i>
+        </button>
         <button onclick="fetchMyKanbanOrders()" class="p-2 sm:p-2.5 text-gray-400 hover:text-white bg-gray-800/80 hover:bg-gray-700 rounded-xl border border-gray-700/60 transition-all" title="Atualizar Pedidos">
           <i data-lucide="refresh-cw" class="w-4 h-4"></i>
         </button>
@@ -155,6 +158,38 @@
     </div>
 
   </main>
+
+  <!-- MODAL DE CONFIGURAÇÃO DA URL DO SERVIDOR (API) -->
+  <div id="modal-api-config" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
+    <div class="glass-card w-full max-w-sm rounded-3xl p-6 space-y-4 border border-amber-500/40 shadow-2xl">
+      <div class="flex justify-between items-center pb-3 border-b border-gray-800">
+        <h3 class="font-extrabold text-white text-sm flex items-center gap-2">
+          <i data-lucide="settings" class="w-4 h-4 text-amber-400"></i> Conexão do Servidor (API)
+        </h3>
+        <button onclick="toggleApiConfigModal()" class="text-gray-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <p class="text-xs text-gray-300 leading-relaxed">
+        Cole abaixo o endereço do seu servidor Backend (ex: Render, localtunnel ou ngrok HTTPS) para carregar os pedidos neste aparelho:
+      </p>
+
+      <form onsubmit="saveApiConfig(event)" class="space-y-3 text-xs">
+        <div>
+          <label class="block text-gray-300 font-bold mb-1">URL do Servidor Backend (HTTPS)</label>
+          <input type="url" id="input-api-url" required placeholder="https://competilivery-api.onrender.com" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500 text-xs" />
+        </div>
+
+        <div class="flex gap-2">
+          <button type="button" onclick="setApiDefaultLocal()" class="py-2.5 px-3 bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold rounded-xl text-[11px]">
+            Usar Localhost
+          </button>
+          <button type="submit" class="flex-1 py-2.5 bg-gradient-to-r from-amber-600 to-brand-600 text-white font-extrabold rounded-xl text-xs shadow-lg">
+            SALVAR CONEXÃO
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <!-- POPUP CUSTOMIZADO LIMPO DE CONFIRMAÇÃO DE ENTREGA -->
   <div id="modal-confirm-delivery" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
@@ -368,10 +403,42 @@
   </footer>
 
   <script>
-    // URL Base da API (Conecta ao servidor local se estiver no PC, ou servidor remoto na nuvem)
-    const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-      ? 'http://localhost:3000'
-      : (localStorage.getItem('api_backend_url') || 'http://localhost:3000');
+    // URL Base Dinâmica do Servidor Backend
+    function getApiBaseUrl() {
+      const stored = localStorage.getItem('custom_api_backend_url');
+      if (stored) return stored;
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        return 'http://localhost:3000';
+      }
+      return 'http://localhost:3000';
+    }
+
+    let API_BASE_URL = getApiBaseUrl();
+
+    function toggleApiConfigModal() {
+      const modal = document.getElementById('modal-api-config');
+      document.getElementById('input-api-url').value = API_BASE_URL;
+      modal.classList.toggle('hidden');
+    }
+
+    function saveApiConfig(e) {
+      e.preventDefault();
+      let urlVal = document.getElementById('input-api-url').value.trim();
+      if (!urlVal) return;
+      urlVal = urlVal.replace(/\/+$/, ''); // remover barra no final
+      localStorage.setItem('custom_api_backend_url', urlVal);
+      API_BASE_URL = urlVal;
+      toggleApiConfigModal();
+      fetchMyKanbanOrders();
+    }
+
+    function setApiDefaultLocal() {
+      localStorage.removeItem('custom_api_backend_url');
+      API_BASE_URL = 'http://localhost:3000';
+      document.getElementById('input-api-url').value = API_BASE_URL;
+      toggleApiConfigModal();
+      fetchMyKanbanOrders();
+    }
 
     let deferredPwaPrompt = null;
 
@@ -764,7 +831,7 @@
         beverageAlert.classList.add('hidden');
       }
 
-      // 4. Dados do Cliente & WhatsApp com Mensagem Exata de Chegada
+      // 4. Dados do Cliente & Contato WhatsApp com Mensagem Exata de Chegada
       document.getElementById('modal-customer-name').innerText = customerName;
       document.getElementById('modal-customer-orders').innerText = `${order.customer?.ordersCountOnMerchant || 1}º Pedido na loja`;
 
@@ -1028,10 +1095,19 @@
 
       } catch (err) {
         activeContainer.innerHTML = `
-          <div class="glass-card p-4 rounded-2xl text-center text-xs text-gray-400 border border-gray-800">
-            Nenhuma entrega em andamento.
+          <div class="glass-card p-6 rounded-3xl text-center space-y-3 border border-amber-500/30 bg-amber-950/10">
+            <i data-lucide="wifi-off" class="w-8 h-8 mx-auto text-amber-400"></i>
+            <h4 class="font-extrabold text-amber-300 text-xs">Servidor Backend Desconectado</h4>
+            <p class="text-[11px] text-gray-300 leading-relaxed">
+              No site público, é necessário configurar o endereço HTTPS do seu Servidor Backend.<br>
+              Clique no ícone ⚙️ no topo para inserir a URL do seu servidor (ex: Render ou localtunnel).
+            </p>
+            <button onclick="toggleApiConfigModal()" class="py-2.5 px-4 bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-xs rounded-xl shadow-lg">
+              ⚙️ CONFIGURAR SERVIDOR
+            </button>
           </div>
         `;
+        lucide.createIcons();
       }
     }
 
