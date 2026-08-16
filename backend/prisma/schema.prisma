@@ -1,0 +1,446 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+enum UserRole {
+  ADMIN
+  OPERATOR
+  DELIVERY_PERSON
+}
+
+enum DeliveryPersonStatus {
+  AVAILABLE
+  BUSY
+  OFFLINE
+  INACTIVE
+}
+
+enum VehicleType {
+  MOTORBIKE_BAG
+  MOTORBIKE_BOX
+  CAR
+  BICYCLE
+  SCOOTER
+  VUC
+}
+
+enum OrderType {
+  DELIVERY
+  TAKEOUT
+  INDOOR
+}
+
+enum SalesChannel {
+  STORE
+  MARKETPLACE
+  TABLET
+  QRCODE
+  TAB
+}
+
+enum OrderTiming {
+  INSTANT
+  SCHEDULED
+}
+
+enum InternalOrderStatus {
+  NEW
+  CONFIRMED
+  PREPARING
+  READY_FOR_PICKUP
+  WAITING_DELIVERY_PERSON
+  DELIVERY_PERSON_ASSIGNED
+  GOING_TO_MERCHANT
+  ARRIVED_AT_MERCHANT
+  ORDER_PICKED_UP
+  GOING_TO_CUSTOMER
+  ARRIVED_AT_CUSTOMER
+  DELIVERED
+  CONCLUDED
+  CANCELLATION_REQUESTED
+  CANCELLED
+}
+
+enum ItemUnit {
+  UN
+  KG
+  L
+  OZ
+  LB
+  GAL
+}
+
+enum FeeType {
+  DELIVERY_FEE
+  SERVICE_FEE
+  TIP
+}
+
+enum FeeReceiver {
+  MARKETPLACE
+  MERCHANT
+  LOGISTIC_SERVICES
+}
+
+enum DiscountTarget {
+  CART
+  DELIVERY_FEE
+  ITEM
+}
+
+enum DiscountSponsorship {
+  MARKETPLACE
+  MERCHANT
+}
+
+enum PaymentType {
+  PREPAID
+  PENDING
+}
+
+enum PaymentMethod {
+  CREDIT
+  DEBIT
+  MEAL_VOUCHER
+  FOOD_VOUCHER
+  DIGITAL_WALLET
+  PIX
+  CASH
+  CREDIT_DEBIT
+  COUPON
+  REDEEM
+  PREPAID_REDEEM
+  OTHER
+}
+
+enum EventStatus {
+  RECEIVED
+  PROCESSING
+  PROCESSED
+  DUPLICATE
+  ERROR
+  ACKNOWLEDGED
+}
+
+enum AssignmentStatus {
+  ASSIGNED
+  ACCEPTED
+  ARRIVED_MERCHANT
+  PICKED_UP
+  ARRIVED_CUSTOMER
+  DELIVERED
+  REJECTED
+  CANCELLED
+}
+
+model Merchant {
+  id                        String           @id @default(uuid())
+  name                      String
+  deliveryvip_merchant_id   String           @unique
+  deliveryvip_client_id     String
+  deliveryvip_client_secret String
+  active                    Boolean          @default(true)
+  created_at                DateTime         @default(now())
+  updated_at                DateTime         @updatedAt
+
+  users                     User[]
+  delivery_persons          DeliveryPerson[]
+  customers                 Customer[]
+  orders                    Order[]
+
+  @@map("merchants")
+}
+
+model User {
+  id                 String          @id @default(uuid())
+  merchant_id        String
+  name               String
+  email              String          @unique
+  password_hash      String
+  role               UserRole        @default(OPERATOR)
+  delivery_person_id String?         @unique
+  created_at         DateTime        @default(now())
+  updated_at         DateTime        @updatedAt
+
+  merchant           Merchant        @relation(fields: [merchant_id], references: [id], onDelete: Cascade)
+  delivery_person    DeliveryPerson? @relation(fields: [delivery_person_id], references: [id])
+  audit_logs         AuditLog[]
+
+  @@map("users")
+}
+
+model DeliveryPerson {
+  id            String               @id @default(uuid())
+  merchant_id   String
+  name          String
+  phone         String
+  document      String
+  picture_url   String?
+  vehicle_type  VehicleType          @default(MOTORBIKE_BAG)
+  vehicle_plate String?
+  status        DeliveryPersonStatus @default(OFFLINE)
+  current_lat   Float?
+  current_lng   Float?
+  created_at    DateTime             @default(now())
+  updated_at    DateTime             @updatedAt
+
+  merchant      Merchant             @relation(fields: [merchant_id], references: [id], onDelete: Cascade)
+  user          User?
+  assignments   DeliveryAssignment[]
+
+  @@map("delivery_persons")
+}
+
+model Customer {
+  id                       String   @id @default(uuid())
+  merchant_id              String
+  deliveryvip_customer_id  String?
+  name                     String
+  phone                    String?
+  phone_extension          String?
+  document_number          String?
+  orders_count_on_merchant Int      @default(0)
+  created_at               DateTime @default(now())
+  updated_at               DateTime @updatedAt
+
+  merchant                 Merchant @relation(fields: [merchant_id], references: [id], onDelete: Cascade)
+  orders                   Order[]
+
+  @@map("customers")
+}
+
+model Address {
+  id                String   @id @default(uuid())
+  country           String   @default("BR")
+  state             String?
+  city              String?
+  district          String?
+  street            String?
+  number            String?
+  complement        String?
+  reference         String?
+  formatted_address String?
+  postal_code       String?
+  latitude          Float?
+  longitude         Float?
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  orders            Order[]
+
+  @@map("addresses")
+}
+
+model Order {
+  id                       String              @id @default(uuid())
+  deliveryvip_order_id     String              @unique
+  merchant_id              String
+  display_id               String?
+  type                     OrderType           @default(DELIVERY)
+  sales_channel            SalesChannel        @default(MARKETPLACE)
+  order_timing             OrderTiming         @default(INSTANT)
+  scheduled_start          DateTime?
+  scheduled_end            DateTime?
+  deliveryvip_status       String              @default("CREATED")
+  internal_status          InternalOrderStatus @default(NEW)
+  preparation_start_at     DateTime?
+  estimated_delivery_at    DateTime?
+  delivery_at              DateTime?
+  concluded_at             DateTime?
+  customer_id              String?
+  address_id               String?
+  items_price              Float               @default(0)
+  other_fees               Float               @default(0)
+  discount_amount          Float               @default(0)
+  order_amount             Float               @default(0)
+  currency                 String              @default("BRL")
+  prepaid_amount           Float               @default(0)
+  pending_amount           Float               @default(0)
+  send_delivered           Boolean             @default(false)
+  send_tracking            Boolean             @default(false)
+  extra_info               String?
+  cancellation_reason      String?
+  cancellation_code        String?
+  created_at               DateTime            @default(now())
+  updated_at               DateTime            @updatedAt
+
+  merchant                 Merchant            @relation(fields: [merchant_id], references: [id], onDelete: Cascade)
+  customer                 Customer?           @relation(fields: [customer_id], references: [id])
+  address                  Address?            @relation(fields: [address_id], references: [id])
+  items                    OrderItem[]
+  fees                     OrderFee[]
+  discounts                OrderDiscount[]
+  payments                 OrderPayment[]
+  assignments              DeliveryAssignment[]
+  audit_logs               AuditLog[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id                   String            @id @default(uuid())
+  order_id             String
+  deliveryvip_item_id  String?
+  item_index           Int               @default(0)
+  name                 String
+  external_code        String?
+  ean                  String?
+  unit                 ItemUnit          @default(UN)
+  quantity             Float             @default(1)
+  unit_price           Float             @default(0)
+  options_price        Float             @default(0)
+  total_price          Float             @default(0)
+  special_instructions String?
+  created_at           DateTime          @default(now())
+  updated_at           DateTime          @updatedAt
+
+  order                Order             @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  options              OrderItemOption[]
+
+  @@map("order_items")
+}
+
+model OrderItemOption {
+  id                   String    @id @default(uuid())
+  order_item_id        String
+  deliveryvip_option_id String?
+  item_index           Int       @default(0)
+  name                 String
+  external_code        String?
+  ean                  String?
+  unit                 ItemUnit  @default(UN)
+  quantity             Float     @default(1)
+  unit_price           Float     @default(0)
+  total_price          Float     @default(0)
+  special_instructions String?
+
+  order_item           OrderItem @relation(fields: [order_item_id], references: [id], onDelete: Cascade)
+
+  @@map("order_item_options")
+}
+
+model OrderFee {
+  id                String       @id @default(uuid())
+  order_id          String
+  name              String
+  type              FeeType      @default(DELIVERY_FEE)
+  received_by       FeeReceiver  @default(MERCHANT)
+  receiver_document String?
+  amount            Float        @default(0)
+  observation       String?
+
+  order             Order        @relation(fields: [order_id], references: [id], onDelete: Cascade)
+
+  @@map("order_fees")
+}
+
+model OrderDiscount {
+  id                 String              @id @default(uuid())
+  order_id           String
+  amount             Float               @default(0)
+  target             DiscountTarget      @default(CART)
+  target_id          String?
+  sponsorship_name   DiscountSponsorship @default(MERCHANT)
+  sponsorship_amount Float               @default(0)
+  discount_code      String?
+
+  order              Order               @relation(fields: [order_id], references: [id], onDelete: Cascade)
+
+  @@map("order_discounts")
+}
+
+model OrderPayment {
+  id          String        @id @default(uuid())
+  order_id    String
+  amount      Float         @default(0)
+  currency    String        @default("BRL")
+  type        PaymentType   @default(PREPAID)
+  method      PaymentMethod @default(PIX)
+  brand       String?
+  method_info String?
+  change_for  Float?
+  prepaid     Float         @default(0)
+  pending     Float         @default(0)
+
+  order       Order         @relation(fields: [order_id], references: [id], onDelete: Cascade)
+
+  @@map("order_payments")
+}
+
+model DeliveryAssignment {
+  id                  String           @id @default(uuid())
+  order_id            String
+  delivery_person_id  String
+  status              AssignmentStatus @default(ASSIGNED)
+  assigned_at         DateTime         @default(now())
+  accepted_at         DateTime?
+  arrived_merchant_at DateTime?
+  picked_up_at        DateTime?
+  arrived_customer_at DateTime?
+  delivered_at        DateTime?
+  created_at          DateTime         @default(now())
+  updated_at          DateTime         @updatedAt
+
+  order               Order            @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  delivery_person     DeliveryPerson   @relation(fields: [delivery_person_id], references: [id])
+
+  @@map("delivery_assignments")
+}
+
+model DeliveryEvent {
+  id                     String      @id @default(uuid())
+  event_id               String      @unique
+  order_id               String?
+  event_type             String
+  order_type             String?
+  merchant_id            String?
+  order_url              String?
+  deliveryvip_created_at DateTime?
+  received_at            DateTime    @default(now())
+  processed_at           DateTime?
+  acknowledged_at        DateTime?
+  status                 EventStatus @default(RECEIVED)
+  metadata               Json?
+  error_message          String?
+  created_at             DateTime    @default(now())
+  updated_at             DateTime    @updatedAt
+
+  @@map("delivery_events")
+}
+
+model ApiLog {
+  id              String   @id @default(uuid())
+  service         String   @default("DeliveryVip")
+  endpoint        String
+  method          String
+  request_body    Json?
+  response_status Int?
+  response_body   Json?
+  duration_ms     Int?
+  error           String?
+  created_at      DateTime @default(now())
+
+  @@map("api_logs")
+}
+
+model AuditLog {
+  id              String   @id @default(uuid())
+  user_id         String?
+  action          String
+  order_id        String?
+  previous_status String?
+  new_status      String?
+  ip              String?
+  details         Json?
+  created_at      DateTime @default(now())
+
+  user            User?    @relation(fields: [user_id], references: [id])
+  order           Order?   @relation(fields: [order_id], references: [id])
+
+  @@map("audit_logs")
+}

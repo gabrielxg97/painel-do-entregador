@@ -1,0 +1,13 @@
+{
+  "name": "mock-deliveryvip",
+  "version": "1.0.0",
+  "description": "Servidor Mock da API Merchant V3 da DeliveryVip para testes e desenvolvimento",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2"
+  }
+}

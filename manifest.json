@@ -1,0 +1,22 @@
+{
+  "name": "Entregador CompetiLivery",
+  "short_name": "Entregador",
+  "description": "Painel de Entregas e Frota de Motoboys — COMPETILIVERY",
+  "start_url": "/driver_portal.html",
+  "display": "standalone",
+  "background_color": "#090d16",
+  "theme_color": "#ff5500",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2972/2972185.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2972/2972185.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

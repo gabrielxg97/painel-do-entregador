@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Painel do Entregador — CompetiLivery</title>
+
+  <!-- PWA Meta Tags -->
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#ff5500" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Entregador" />
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2972/2972185.png" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: { 500: '#ff5500', 600: '#e64500', 700: '#cc3700' },
+            dark: { 900: '#090d16', 800: '#111827', 700: '#1f2937' }
+          },
+          fontFamily: { sans: ['Outfit', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <style>
+    .glass-card {
+      background: rgba(17, 24, 39, 0.94);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .kanban-column {
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+  </style>
+</head>
+<body class="bg-dark-900 text-white min-h-screen flex flex-col justify-between font-sans antialiased selection:bg-brand-500 selection:text-white pb-safe">
+
+  <!-- BANNER NOTIFICAÇÃO DE INSTALAÇÃO DO PWA (CELULAR) -->
+  <div id="pwa-install-banner" class="hidden sticky top-0 z-40 bg-gradient-to-r from-brand-600 via-amber-600 to-brand-600 text-white p-3 shadow-2xl border-b border-amber-400/30">
+    <div class="max-w-6xl mx-auto flex items-center justify-between gap-3">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-2xl bg-black/30 flex items-center justify-center shrink-0">
+          <i data-lucide="smartphone" class="w-5 h-5 text-amber-300"></i>
+        </div>
+        <div>
+          <h4 class="font-extrabold text-xs leading-none">INSTALAR APLICATIVO DO ENTREGADOR</h4>
+          <p class="text-[11px] text-amber-100 font-medium mt-0.5">Adicione o App na tela inicial do seu celular para facilitar o acesso!</p>
+        </div>
+      </div>
+      <div class="flex items-center space-x-2 shrink-0">
+        <button id="pwa-install-btn" onclick="triggerPwaInstall()" class="px-3.5 py-2 bg-white text-brand-600 font-extrabold text-xs rounded-xl shadow-lg active:scale-95 transition-all">
+          INSTALAR APP
+        </button>
+        <button onclick="dismissPwaBanner()" class="p-1.5 text-amber-200 hover:text-white rounded-lg">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top Navigation Header -->
+  <header class="p-3.5 sm:p-4 bg-gray-900/90 backdrop-blur-md border-b border-gray-800 sticky top-0 z-30">
+    <div class="max-w-6xl mx-auto flex items-center justify-between">
+      <div class="flex items-center space-x-2.5">
+        <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-brand-600 to-amber-500 flex items-center justify-center text-white font-bold shadow-lg shadow-brand-500/20">
+          <i data-lucide="bike" class="w-5 h-5 sm:w-6 sm:h-6"></i>
+        </div>
+        <div>
+          <h1 class="font-extrabold text-white text-sm sm:text-base leading-none">Painel do Entregador</h1>
+          <span class="text-[10px] sm:text-[11px] text-amber-400 font-semibold flex items-center gap-1 mt-0.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Loja: CompetiLivery
+          </span>
+        </div>
+      </div>
+
+      <!-- Motoboy Profile Status / Refresh -->
+      <div class="flex items-center space-x-2 sm:space-x-3">
+        <button onclick="fetchMyKanbanOrders()" class="p-2 sm:p-2.5 text-gray-400 hover:text-white bg-gray-800/80 hover:bg-gray-700 rounded-xl border border-gray-700/60 transition-all" title="Atualizar Pedidos">
+          <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+        </button>
+        <button onclick="toggleLoginModal()" class="px-2.5 sm:px-3.5 py-2 bg-gray-800/90 hover:bg-gray-700 border border-gray-700/80 rounded-xl flex items-center gap-2 text-xs font-bold text-gray-200 transition-all shadow-md">
+          <i data-lucide="user-check" class="w-4 h-4 text-emerald-400"></i>
+          <span id="header-driver-name" class="truncate max-w-[100px] sm:max-w-none">Identificar Entregador</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Kanban Board Area -->
+  <main class="max-w-6xl w-full mx-auto p-3 sm:p-6 flex-1 space-y-4 sm:space-y-6">
+
+    <!-- Mobile Tab Switcher -->
+    <div class="flex md:hidden bg-gray-900/90 p-1.5 rounded-2xl border border-gray-800 gap-1.5">
+      <button id="tab-btn-active" onclick="switchMobileTab('active')" class="flex-1 py-3 rounded-xl font-extrabold text-xs flex items-center justify-center gap-2 bg-brand-600 text-white shadow-lg">
+        <i data-lucide="bike" class="w-4 h-4"></i> Em Entrega <span id="mobile-badge-active" class="bg-black/30 px-2 py-0.5 rounded-full text-[10px]">0</span>
+      </button>
+      <button id="tab-btn-completed" onclick="switchMobileTab('completed')" class="flex-1 py-3 rounded-xl font-extrabold text-xs flex items-center justify-center gap-2 text-gray-400 hover:text-white">
+        <i data-lucide="check-circle-2" class="w-4 h-4"></i> Finalizados (12h) <span id="mobile-badge-completed" class="bg-gray-800 px-2 py-0.5 rounded-full text-[10px]">0</span>
+      </button>
+    </div>
+
+    <!-- Grid Kanban 2 Colunas -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+
+      <!-- COLUNA 1: 🛵 EM ENTREGA -->
+      <div id="col-active-container" class="kanban-column rounded-3xl p-4 sm:p-5 space-y-4 shadow-xl">
+        <div class="flex items-center justify-between pb-3 border-b border-gray-800">
+          <div class="flex items-center space-x-2.5">
+            <div class="w-8 h-8 rounded-xl bg-brand-500/20 text-brand-400 flex items-center justify-center font-bold">
+              <i data-lucide="bike" class="w-4 h-4"></i>
+            </div>
+            <h2 class="font-extrabold text-white text-base tracking-tight">Em Entrega</h2>
+          </div>
+          <span id="badge-count-active" class="px-3 py-1 rounded-full bg-brand-500/20 text-brand-400 font-extrabold text-xs border border-brand-500/30">0</span>
+        </div>
+
+        <div id="kanban-active-orders" class="space-y-4">
+          <div class="text-center py-12 text-gray-500 text-xs">Buscando entregas atribuídas a você...</div>
+        </div>
+      </div>
+
+      <!-- COLUNA 2: ✅ FINALIZADOS (EXPIRAM EM 12H) -->
+      <div id="col-completed-container" class="kanban-column rounded-3xl p-4 sm:p-5 space-y-4 shadow-xl hidden md:block">
+        <div class="flex items-center justify-between pb-3 border-b border-gray-800">
+          <div class="flex items-center space-x-2.5">
+            <div class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
+              <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <h2 class="font-extrabold text-white text-base tracking-tight leading-none">Finalizados</h2>
+              <span class="text-[10px] text-gray-400 font-semibold">Expiram em 12 horas</span>
+            </div>
+          </div>
+          <span id="badge-count-completed" class="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 font-extrabold text-xs border border-emerald-500/30">0</span>
+        </div>
+
+        <div id="kanban-completed-orders" class="space-y-4">
+          <div class="text-center py-12 text-gray-500 text-xs">Nenhuma entrega finalizada nas últimas 12h.</div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- POPUP CUSTOMIZADO LIMPO DE CONFIRMAÇÃO DE ENTREGA -->
+  <div id="modal-confirm-delivery" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
+    <div class="glass-card w-full max-w-sm rounded-3xl p-6 space-y-4 border border-gray-800 shadow-2xl text-center">
+      <div class="w-14 h-14 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto border border-emerald-500/30">
+        <i data-lucide="check-circle-2" class="w-8 h-8"></i>
+      </div>
+      
+      <div>
+        <h3 class="text-lg font-extrabold text-white">Confirmar Entrega?</h3>
+        <p id="confirm-order-text" class="text-xs text-gray-300 mt-1">Deseja confirmar a entrega do pedido?</p>
+      </div>
+
+      <div class="p-3.5 bg-gray-900/90 rounded-2xl border border-gray-800 text-xs text-gray-300 font-medium">
+        Tem certeza de que a entrega foi realizada com sucesso ao cliente?
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 pt-1">
+        <button onclick="closeConfirmModal()" class="py-3 px-4 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 font-extrabold text-xs border border-gray-700 transition-all">
+          NÃO, CANCELAR
+        </button>
+        <button id="btn-do-confirm-delivery" onclick="executeOrderDeliveryConfirmation()" class="py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs shadow-lg shadow-emerald-600/25 transition-all">
+          SIM, CONFIRMAR
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL / POPUP DE DETALHES COMPLETOS DO PEDIDO -->
+  <div id="modal-order-details" class="fixed inset-0 z-50 hidden flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md">
+    <div class="glass-card w-full max-w-lg rounded-3xl p-5 sm:p-6 space-y-5 border border-gray-800 shadow-2xl max-h-[92vh] overflow-y-auto">
+      
+      <!-- Modal Header -->
+      <div class="flex justify-between items-start pb-4 border-b border-gray-800">
+        <div>
+          <div class="flex items-center gap-2">
+            <h3 id="modal-order-id" class="text-xl font-extrabold text-white">#PEDIDO</h3>
+            <span id="modal-order-badge" class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-brand-500/20 text-brand-400 border border-brand-500/30">EM TRÂNSITO</span>
+          </div>
+          <p id="modal-order-date" class="text-xs text-gray-400 mt-0.5">Criado em: --/--/---- --:--</p>
+        </div>
+        <button onclick="closeOrderModal()" class="p-2 text-gray-400 hover:text-white rounded-xl hover:bg-gray-800">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- CARD DE ATENÇÃO: LEVAR TROCO (SE HOUVER TROCO) -->
+      <div id="modal-change-alert" class="hidden p-3.5 rounded-2xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 text-xs font-bold flex items-center gap-2.5 animate-pulse">
+        <div class="w-8 h-8 rounded-xl bg-emerald-500/30 text-emerald-300 flex items-center justify-center shrink-0">
+          <i data-lucide="banknote" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <div id="modal-change-alert-title" class="font-extrabold text-emerald-200">💵 ATENÇÃO: LEVAR TROCO!</div>
+          <div id="modal-change-alert-subtitle" class="text-[11px] font-medium text-emerald-300/90">Devolver troco ao cliente no ato da entrega.</div>
+        </div>
+      </div>
+
+      <!-- ALERTA DE BEBIDAS (SE HOUVER) -->
+      <div id="modal-beverage-alert" class="hidden p-3.5 rounded-2xl bg-amber-500/15 border border-amber-500/40 text-amber-300 text-xs font-bold flex items-center gap-2.5 animate-pulse">
+        <div class="w-8 h-8 rounded-xl bg-amber-500/30 text-amber-300 flex items-center justify-center shrink-0">
+          <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <div class="font-extrabold text-amber-200">⚠️ ATENÇÃO: ESTE PEDIDO CONTÉM BEBIDAS!</div>
+          <div class="text-[11px] font-medium text-amber-300/80">Verifique a caixa/bag antes de sair para a entrega.</div>
+        </div>
+      </div>
+
+      <!-- DADOS DO CLIENTE & CONTATO WHATSAPP COM ÍCONE -->
+      <div class="space-y-2">
+        <h4 class="text-xs font-extrabold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
+          <i data-lucide="user" class="w-3.5 h-3.5 text-brand-500"></i> Dados do Cliente
+        </h4>
+        <div class="p-4 rounded-2xl bg-gray-900/90 border border-gray-800 space-y-3">
+          <div class="flex justify-between items-center">
+            <span id="modal-customer-name" class="font-extrabold text-white text-sm">Nome do Cliente</span>
+            <span id="modal-customer-orders" class="text-[10px] bg-purple-500/15 text-purple-300 px-2 py-0.5 rounded font-bold">1º Pedido</span>
+          </div>
+
+          <!-- BOTÃO WHATSAPP CLICÁVEL COM ÍCONE E MENSAGEM DE CHEGADA -->
+          <a id="modal-whatsapp-link" href="#" target="_blank" class="w-full py-3.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs flex items-center justify-center gap-2.5 transition-all shadow-lg shadow-emerald-600/20 active:scale-95">
+            <svg class="w-5 h-5 fill-current shrink-0 text-white" viewBox="0 0 24 24">
+              <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
+            </svg>
+            <span id="modal-phone-text">ENTRAR EM CONTATO COM O CLIENTE</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- ENDEREÇO DE ENTREGA & NAVEGAÇÃO GOOGLE MAPS E WAZE COM ÍCONES -->
+      <div class="space-y-2">
+        <h4 class="text-xs font-extrabold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
+          <i data-lucide="map-pin" class="w-3.5 h-3.5 text-amber-400"></i> Endereço de Entrega
+        </h4>
+        <div class="p-4 rounded-2xl bg-gray-900/90 border border-gray-800 space-y-3">
+          <div class="space-y-1">
+            <p id="modal-formatted-address" class="text-xs text-gray-200 leading-relaxed font-semibold">Carregando endereço...</p>
+            <p id="modal-address-reference" class="text-[11px] text-amber-300/90 font-medium hidden">Ponto de referência: --</p>
+          </div>
+
+          <!-- 2 BOTÕES DE NAVEGAÇÃO: GOOGLE MAPS E WAZE -->
+          <div class="grid grid-cols-2 gap-2 pt-1">
+            <a id="modal-maps-link" href="#" target="_blank" class="py-3.5 px-3 rounded-xl bg-gradient-to-r from-amber-600 to-brand-600 hover:from-amber-500 hover:to-brand-500 text-white font-extrabold text-[11px] flex items-center justify-center gap-1.5 transition-all shadow-md active:scale-95">
+              <i data-lucide="map" class="w-4 h-4 text-white shrink-0"></i>
+              <span>GOOGLE MAPS</span>
+            </a>
+
+            <a id="modal-waze-link" href="#" target="_blank" class="py-3.5 px-3 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-extrabold text-[11px] flex items-center justify-center gap-1.5 transition-all shadow-md active:scale-95">
+              <i data-lucide="navigation-2" class="w-4 h-4 text-white shrink-0"></i>
+              <span>WAZE</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- FORMA DE PAGAMENTO & TAXA & TROCO -->
+      <div class="space-y-2">
+        <h4 class="text-xs font-extrabold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
+          <i data-lucide="credit-card" class="w-3.5 h-3.5 text-cyan-400"></i> Pagamento & Taxa de Entrega
+        </h4>
+        <div class="p-4 rounded-2xl bg-gray-900/90 border border-gray-800 space-y-2.5">
+          <div class="flex justify-between items-center text-xs">
+            <span class="text-gray-400 font-bold">Status do Pagamento:</span>
+            <span id="modal-payment-status" class="font-extrabold px-2.5 py-0.5 rounded text-[11px] bg-emerald-500/20 text-emerald-400">PAGO ONLINE</span>
+          </div>
+          <div class="flex justify-between items-center text-xs border-t border-gray-800 pt-2">
+            <span class="text-gray-400 font-bold">Forma / Meio:</span>
+            <span id="modal-payment-method" class="font-extrabold text-white text-xs">Dinheiro</span>
+          </div>
+
+          <!-- LINHA DE EXIBIÇÃO DINÂMICA DO TROCO -->
+          <div id="modal-change-container" class="flex justify-between items-center text-xs border-t border-gray-800 pt-2 font-bold">
+            <span class="text-gray-300 flex items-center gap-1.5">
+              <i data-lucide="banknote" class="w-4 h-4 text-emerald-400"></i> Troco:
+            </span>
+            <span id="modal-change-text" class="font-extrabold text-amber-300">sem troco</span>
+          </div>
+          
+          <!-- LINHA DESTAQUE DA TAXA DE ENTREGA DO MOTOBOY -->
+          <div class="flex justify-between items-center text-xs border-t border-gray-800 pt-2 font-extrabold bg-emerald-500/10 p-2.5 rounded-xl border border-emerald-500/20">
+            <span class="text-emerald-300 flex items-center gap-1.5">
+              <i data-lucide="bike" class="w-4 h-4 text-emerald-400"></i> Taxa de Entrega do Motoboy:
+            </span>
+            <span id="modal-delivery-fee" class="text-emerald-400 font-extrabold text-sm">R$ 0,00</span>
+          </div>
+
+          <div class="flex justify-between items-center text-sm border-t border-gray-800 pt-2 font-extrabold">
+            <span class="text-gray-300">Valor Total do Pedido:</span>
+            <span id="modal-order-total" class="text-amber-400 text-base">R$ 0,00</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ITENS DO PEDIDO -->
+      <div class="space-y-2">
+        <h4 class="text-xs font-extrabold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
+          <i data-lucide="shopping-bag" class="w-3.5 h-3.5 text-purple-400"></i> Itens do Pedido
+        </h4>
+        <div id="modal-items-list" class="p-4 rounded-2xl bg-gray-900/90 border border-gray-800 space-y-2 text-xs divide-y divide-gray-800/80">
+          <!-- Inserido dinamicamente -->
+        </div>
+      </div>
+
+      <!-- BOTÃO DE CONFIRMAR ENTREGA -->
+      <div id="modal-action-container" class="pt-2">
+        <!-- Inserido dinamicamente -->
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Modal de Identificação Inicial do Motoboy (Obrigatório em Celular Novo) -->
+  <div id="modal-driver-login" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
+    <div class="glass-card w-full max-w-sm rounded-3xl p-6 space-y-5 border border-brand-500/30 shadow-2xl">
+      <div class="flex justify-between items-center pb-3 border-b border-gray-800">
+        <div class="flex items-center space-x-2.5">
+          <div class="w-9 h-9 rounded-2xl bg-brand-500/20 text-brand-400 flex items-center justify-center">
+            <i data-lucide="user" class="w-5 h-5"></i>
+          </div>
+          <h3 class="font-extrabold text-white text-base">Identificação do Entregador</h3>
+        </div>
+        <button id="btn-close-login" onclick="toggleLoginModal()" class="text-gray-400 hover:text-white hidden"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <div class="space-y-1">
+        <p class="text-xs font-semibold text-gray-200">Bem-vindo ao Painel do Entregador! 👋</p>
+        <p class="text-[11px] text-gray-400 leading-relaxed">
+          Informe seu Nome e Telefone para acessar suas entregas. Estas informações ficarão salvas neste aparelho para seus próximos acessos.
+        </p>
+      </div>
+
+      <form onsubmit="saveDriverProfile(event)" class="space-y-4 text-xs">
+        <div>
+          <label class="block text-gray-300 font-extrabold mb-1.5">Seu Nome Completo</label>
+          <input type="text" id="login-driver-name" required placeholder="Ex: Gabriel Motoboy" class="w-full bg-gray-900 border border-gray-700 rounded-2xl p-3.5 text-white font-semibold focus:outline-none focus:border-brand-500 transition-all text-xs" />
+        </div>
+        <div>
+          <label class="block text-gray-300 font-extrabold mb-1.5">Seu Telefone / WhatsApp</label>
+          <input type="tel" id="login-driver-phone" required placeholder="Ex: 62 99389-1884" class="w-full bg-gray-900 border border-gray-700 rounded-2xl p-3.5 text-white font-semibold focus:outline-none focus:border-brand-500 transition-all text-xs" />
+        </div>
+
+        <button type="submit" class="w-full py-4 bg-gradient-to-r from-brand-600 via-amber-600 to-brand-500 text-white font-extrabold rounded-2xl text-xs shadow-xl shadow-brand-500/25 flex items-center justify-center gap-2 active:scale-95 transition-all">
+          <i data-lucide="check-circle-2" class="w-4 h-4"></i> SALVAR E ACESSAR ENTREGAS
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <footer class="p-4 text-center text-[10px] text-gray-500 border-t border-gray-800">
+    Integração Oficial API Merchant V3 CompetiLivery • Loja COMPETILIVERY
+  </footer>
+
+  <script>
+    let deferredPwaPrompt = null;
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(() => {});
+      });
+    }
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPwaPrompt = e;
+      const banner = document.getElementById('pwa-install-banner');
+      if (banner && !localStorage.getItem('pwa_dismissed')) {
+        banner.classList.remove('hidden');
+      }
+    });
+
+    function triggerPwaInstall() {
+      if (deferredPwaPrompt) {
+        deferredPwaPrompt.prompt();
+        deferredPwaPrompt.userChoice.then((choiceResult) => {
+          if (choiceResult.outcome === 'accepted') {
+            dismissPwaBanner();
+          }
+          deferredPwaPrompt = null;
+        });
+      } else {
+        alert('Para instalar este App:\n\n• No Android (Chrome): Clique nos 3 pontinhos do menu > "Adicionar à tela inicial" ou "Instalar aplicativo".\n\n• No iPhone (Safari): Clique no botão de Compartilhar > "Adicionar à Tela de Início".');
+      }
+    }
+
+    function dismissPwaBanner() {
+      document.getElementById('pwa-install-banner').classList.add('hidden');
+      localStorage.setItem('pwa_dismissed', 'true');
+    }
+
+    let currentDriver = {
+      name: '',
+      phone: ''
+    };
+
+    let activeOrdersCache = [];
+    let pendingConfirmDisplayId = null;
+
+    // Extrator Profundo e Recursivo de Troco na Estrutura de Pagamentos da CompetiLivery
+    function extractChangeDeep(order) {
+      if (!order) return { isCash: false, hasChange: false, changeForVal: 0, changeAmountVal: 0, text: 'sem troco' };
+
+      let isCash = false;
+      let changeForVal = 0;
+      let changeAmountVal = 0;
+      let foundText = '';
+
+      function parseVal(val) {
+        if (typeof val === 'number') return val;
+        if (typeof val === 'string') {
+          const clean = val.replace(/[^\d.,]/g, '').replace(',', '.');
+          return parseFloat(clean) || 0;
+        }
+        if (val && typeof val.value === 'number') return val.value;
+        if (val && typeof val.value === 'string') return parseVal(val.value);
+        if (val && typeof val.amount === 'number') return val.amount;
+        return 0;
+      }
+
+      function deepSearchChange(obj, depth = 0) {
+        if (!obj || depth > 5) return;
+        if (typeof obj !== 'object') return;
+
+        for (const [key, val] of Object.entries(obj)) {
+          const keyLower = key.toLowerCase();
+
+          if (typeof val === 'string') {
+            const valLower = val.toLowerCase();
+            if (valLower.includes('dinheiro') || valLower.includes('cash') || valLower.includes('troco')) {
+              isCash = true;
+              foundText += ` ${val}`;
+            }
+          }
+
+          if (keyLower.includes('changefor') || keyLower.includes('change_for') || keyLower.includes('trocopara') || keyLower.includes('troco_para')) {
+            const num = parseVal(val);
+            if (num > changeForVal) changeForVal = num;
+          }
+
+          if (keyLower === 'change' || keyLower.includes('valtroco') || keyLower.includes('valor_troco') || keyLower.includes('valortroco')) {
+            const num = parseVal(val);
+            if (num > changeAmountVal) changeAmountVal = num;
+          }
+
+          if (typeof val === 'object' && val !== null) {
+            deepSearchChange(val, depth + 1);
+          }
+        }
+      }
+
+      if (order.payments) {
+        deepSearchChange(order.payments);
+      }
+      if (order.delivery) {
+        deepSearchChange(order.delivery);
+      }
+
+      foundText += ` ${order.observation || ''} ${order.note || ''} ${order.instructions || ''} ${order.delivery?.deliveryAddress?.reference || ''} ${order.delivery?.deliveryAddress?.complement || ''}`;
+
+      if (!isCash) {
+        if (foundText.toLowerCase().includes('dinheiro') || foundText.toLowerCase().includes('troco')) {
+          isCash = true;
+        }
+      }
+
+      if (changeForVal === 0 && foundText) {
+        const matchFor = foundText.match(/troco\s+(?:para|p\/|de)?\s*r?\$?\s*(\d+(?:[.,]\d{2})?)/i);
+        if (matchFor && matchFor[1]) {
+          changeForVal = parseFloat(matchFor[1].replace(',', '.'));
+        }
+      }
+
+      const orderTotalVal = order.total && order.total.orderAmount ? order.total.orderAmount.value : 0;
+
+      if (changeAmountVal === 0 && changeForVal > orderTotalVal) {
+        changeAmountVal = changeForVal - orderTotalVal;
+      }
+
+      if (changeForVal === 0 && changeAmountVal > 0) {
+        changeForVal = orderTotalVal + changeAmountVal;
+      }
+
+      if (isCash && (changeForVal > 0 || changeAmountVal > 0)) {
+        const calcDiff = changeAmountVal > 0 ? changeAmountVal : (changeForVal - orderTotalVal);
+        return {
+          isCash: true,
+          hasChange: true,
+          changeForVal: changeForVal,
+          changeAmountVal: calcDiff > 0 ? calcDiff : 0,
+          text: `Levar R$ ${(calcDiff > 0 ? calcDiff : 0).toFixed(2)} de troco (para R$ ${changeForVal.toFixed(2)})`
+        };
+      } else if (isCash) {
+        return {
+          isCash: true,
+          hasChange: false,
+          changeForVal: 0,
+          changeAmountVal: 0,
+          text: 'sem troco (Dinheiro trocado)'
+        };
+      } else {
+        return {
+          isCash: false,
+          hasChange: false,
+          changeForVal: 0,
+          changeAmountVal: 0,
+          text: 'sem troco'
+        };
+      }
+    }
+
+    // Extrator Completo e Seguro da Taxa de Entrega do Pedido
+    function getDeliveryFee(order) {
+      if (!order) return 0;
+      
+      if (order.delivery && order.delivery.deliveryFee) {
+        if (typeof order.delivery.deliveryFee.value === 'number') return order.delivery.deliveryFee.value;
+        if (typeof order.delivery.deliveryFee === 'number') return order.delivery.deliveryFee;
+      }
+
+      if (typeof order.deliveryFee === 'number') return order.deliveryFee;
+      if (order.deliveryFee && typeof order.deliveryFee.value === 'number') return order.deliveryFee.value;
+
+      if (Array.isArray(order.otherFees)) {
+        const fee = order.otherFees.find(f => 
+          (f.type && f.type.toUpperCase().includes('DELIVERY')) || 
+          (f.name && f.name.toUpperCase().includes('DELIVERY')) ||
+          (f.name && f.name.toUpperCase().includes('ENTREGA')) ||
+          (f.name && f.name.toUpperCase().includes('TAXA'))
+        );
+        if (fee) {
+          if (fee.price && typeof fee.price.value === 'number') return fee.price.value;
+          if (typeof fee.value === 'number') return fee.value;
+          if (typeof fee.price === 'number') return fee.price;
+        }
+      }
+
+      if (order.total) {
+        if (order.total.deliveryFee && typeof order.total.deliveryFee.value === 'number') return order.total.deliveryFee.value;
+        if (order.total.otherFees && typeof order.total.otherFees.value === 'number') return order.total.otherFees.value;
+      }
+
+      return 0;
+    }
+
+    function updateDriverDisplay() {
+      document.getElementById('header-driver-name').innerText = currentDriver.name || 'Identificar Entregador';
+      document.getElementById('login-driver-name').value = currentDriver.name || '';
+      document.getElementById('login-driver-phone').value = currentDriver.phone || '';
+    }
+
+    function toggleLoginModal() {
+      document.getElementById('modal-driver-login').classList.toggle('hidden');
+    }
+
+    function closeOrderModal() {
+      document.getElementById('modal-order-details').classList.add('hidden');
+    }
+
+    function promptConfirmDelivery(displayId) {
+      pendingConfirmDisplayId = displayId;
+      document.getElementById('confirm-order-text').innerText = `Deseja confirmar a entrega do pedido #${displayId}?`;
+      document.getElementById('modal-confirm-delivery').classList.remove('hidden');
+    }
+
+    function closeConfirmModal() {
+      pendingConfirmDisplayId = null;
+      document.getElementById('modal-confirm-delivery').classList.add('hidden');
+    }
+
+    async function executeOrderDeliveryConfirmation() {
+      if (!pendingConfirmDisplayId) return;
+      const displayId = pendingConfirmDisplayId;
+
+      const confirmBtn = document.getElementById('btn-do-confirm-delivery');
+      confirmBtn.disabled = true;
+      confirmBtn.innerText = 'CONFIRMANDO...';
+
+      try {
+        const res = await fetch('http://localhost:3000/api/driver/confirm-by-code', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderCode: displayId, driverName: currentDriver.name })
+        });
+        const data = await res.json();
+        closeConfirmModal();
+        closeOrderModal();
+        fetchMyKanbanOrders();
+      } catch (err) {
+        closeConfirmModal();
+        fetchMyKanbanOrders();
+      } finally {
+        confirmBtn.disabled = false;
+        confirmBtn.innerText = 'SIM, CONFIRMAR';
+      }
+    }
+
+    function switchMobileTab(tab) {
+      const activeCol = document.getElementById('col-active-container');
+      const completedCol = document.getElementById('col-completed-container');
+      const activeBtn = document.getElementById('tab-btn-active');
+      const completedBtn = document.getElementById('tab-btn-completed');
+
+      if (tab === 'active') {
+        activeCol.classList.remove('hidden');
+        completedCol.classList.add('hidden');
+        activeBtn.className = 'flex-1 py-3 rounded-xl font-extrabold text-xs flex items-center justify-center gap-2 bg-brand-600 text-white shadow-lg';
+        completedBtn.className = 'flex-1 py-3 rounded-xl font-extrabold text-xs flex items-center justify-center gap-2 text-gray-400 hover:text-white';
+      } else {
+        activeCol.classList.add('hidden');
+        completedCol.classList.remove('hidden');
+        completedBtn.className = 'flex-1 py-3 rounded-xl font-extrabold text-xs flex items-center justify-center gap-2 bg-emerald-600 text-white shadow-lg';
+        activeBtn.className = 'flex-1 py-3 rounded-xl font-extrabold text-xs flex items-center justify-center gap-2 text-gray-400 hover:text-white';
+      }
+    }
+
+    // Detector de Tempo de Entrega e Alerta de 10 min / Atraso
+    function getDeliveryTimeAlert(estimatedDeliveryIso, createdAtIso) {
+      let targetMs = null;
+      if (estimatedDeliveryIso) {
+        targetMs = new Date(estimatedDeliveryIso).getTime();
+      }
+      if (!targetMs || isNaN(targetMs)) {
+        const createdMs = createdAtIso ? new Date(createdAtIso).getTime() : Date.now();
+        targetMs = createdMs + (45 * 60 * 1000);
+      }
+
+      const nowMs = Date.now();
+      const diffMinutes = Math.floor((targetMs - nowMs) / (60 * 1000));
+      const timeFormatted = new Date(targetMs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      if (diffMinutes < 0) {
+        const absMin = Math.abs(diffMinutes);
+        return {
+          status: 'OVERDUE',
+          timeFormatted,
+          diffMinutes,
+          badgeText: `🚨 PEDIDO ATRASADO! (${absMin} min de atraso)`,
+          cardBorderClass: 'border-l-red-500 border-red-500/50 bg-red-950/20 shadow-red-950/30',
+          badgeBgClass: 'bg-red-500/20 text-red-300 border-red-500/40 animate-pulse font-extrabold'
+        };
+      } else if (diffMinutes <= 10) {
+        return {
+          status: 'WARNING',
+          timeFormatted,
+          diffMinutes,
+          badgeText: `⚠️ PRÓXIMO DE ATRASAR! (Resta(m) ${diffMinutes} min)`,
+          cardBorderClass: 'border-l-amber-500 border-amber-500/50 bg-amber-950/20 shadow-amber-950/30',
+          badgeBgClass: 'bg-amber-500/20 text-amber-300 border-amber-500/40 animate-pulse font-extrabold'
+        };
+      } else {
+        return {
+          status: 'NORMAL',
+          timeFormatted,
+          diffMinutes,
+          badgeText: `⏱️ Previsão de Entrega: ${timeFormatted} (em ${diffMinutes} min)`,
+          cardBorderClass: 'border-l-brand-500',
+          badgeBgClass: 'bg-gray-800/90 text-gray-300 border-gray-700/80 font-bold'
+        };
+      }
+    }
+
+    // Detector de Bebidas
+    function checkHasBeverage(items) {
+      if (!items || !Array.isArray(items)) return false;
+      const keywords = ['bebida', 'refrigerante', 'coca', 'guaraná', 'guarana', 'suco', 'cerveja', 'chope', 'água', 'agua', 'fanta', 'sprite', 'lata', '600ml', '2l', 'pepsi', 'red bull', 'monster', 'tônica', 'tonica', 'long neck'];
+      return items.some(item => {
+        const nameLower = (item.name || '').toLowerCase();
+        const subOptionsLower = (item.options || []).map(o => (o.name || '').toLowerCase()).join(' ');
+        const combined = nameLower + ' ' + subOptionsLower;
+        return keywords.some(k => combined.includes(k));
+      });
+    }
+
+    async function registerDriverOnline() {
+      if (!currentDriver.name || !currentDriver.phone) return;
+      try {
+        await fetch('http://localhost:3000/api/driver/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: currentDriver.name, phone: currentDriver.phone, status: 'AVAILABLE' })
+        });
+      } catch (err) {}
+    }
+
+    async function saveDriverProfile(e) {
+      e.preventDefault();
+      const name = document.getElementById('login-driver-name').value.trim();
+      const phone = document.getElementById('login-driver-phone').value.trim();
+
+      if (!name || !phone) {
+        alert('Por favor, preencha seu Nome e Telefone para acessar suas entregas.');
+        return;
+      }
+
+      currentDriver = { name, phone };
+      localStorage.setItem('driver_name', name);
+      localStorage.setItem('driver_phone', phone);
+      updateDriverDisplay();
+      await registerDriverOnline();
+      
+      document.getElementById('btn-close-login').classList.remove('hidden');
+      document.getElementById('modal-driver-login').classList.add('hidden');
+      fetchMyKanbanOrders();
+    }
+
+    // ABRIR POPUP DE DETALHES COMPLETOS DO PEDIDO
+    function openOrderModal(displayId) {
+      const order = activeOrdersCache.find(o => o.displayId === displayId || o.id === displayId);
+      if (!order) return;
+
+      const customerName = order.customer ? order.customer.name : 'Cliente';
+      const rawPhone = order.customer && order.customer.phone ? order.customer.phone.number : '';
+      const cleanPhoneDigits = rawPhone.replace(/\D/g, '');
+      const deliveryObj = order.delivery && order.delivery.deliveryAddress ? order.delivery.deliveryAddress : {};
+      const formattedAddress = deliveryObj.formattedAddress || 'Endereço informado no pedido';
+      const reference = deliveryObj.reference || deliveryObj.complement || '';
+      const coords = deliveryObj.coordinates;
+      const totalVal = order.total && order.total.orderAmount ? order.total.orderAmount.value : 0;
+      const deliveryFeeVal = getDeliveryFee(order);
+      const items = order.items || [];
+      const hasDrink = checkHasBeverage(items);
+      const changeInfo = extractChangeDeep(order);
+
+      // 1. Header & Datas
+      document.getElementById('modal-order-id').innerText = `#${order.displayId}`;
+      document.getElementById('modal-order-date').innerText = `Criado em: ${new Date(order.createdAt || Date.now()).toLocaleString('pt-BR')}`;
+
+      // 2. CARD DE ATENÇÃO DE TROCO NO POPUP
+      const changeAlert = document.getElementById('modal-change-alert');
+      if (changeInfo.hasChange) {
+        document.getElementById('modal-change-alert-title').innerText = `💵 ATENÇÃO: LEVAR R$ ${changeInfo.changeAmountVal.toFixed(2)} DE TROCO!`;
+        document.getElementById('modal-change-alert-subtitle').innerText = `O cliente irá pagar em dinheiro com notas para R$ ${changeInfo.changeForVal.toFixed(2)}. Devolver o troco!`;
+        changeAlert.classList.remove('hidden');
+      } else {
+        changeAlert.classList.add('hidden');
+      }
+
+      // 3. Alerta de Bebidas
+      const beverageAlert = document.getElementById('modal-beverage-alert');
+      if (hasDrink) {
+        beverageAlert.classList.remove('hidden');
+      } else {
+        beverageAlert.classList.add('hidden');
+      }
+
+      // 4. Dados do Cliente & WhatsApp com Mensagem Exata de Chegada
+      document.getElementById('modal-customer-name').innerText = customerName;
+      document.getElementById('modal-customer-orders').innerText = `${order.customer?.ordersCountOnMerchant || 1}º Pedido na loja`;
+
+      const whatsappBtn = document.getElementById('modal-whatsapp-link');
+      if (cleanPhoneDigits) {
+        const phoneFormatted = cleanPhoneDigits.startsWith('55') ? cleanPhoneDigits : `55${cleanPhoneDigits}`;
+        const waMsg = encodeURIComponent("Olá, tudo bem? acabei de chegar no endereço com sua entrega poderia me receber por gentileza?");
+        whatsappBtn.href = `https://wa.me/${phoneFormatted}?text=${waMsg}`;
+        document.getElementById('modal-phone-text').innerText = `ENTRAR EM CONTATO COM O CLIENTE`;
+        whatsappBtn.classList.remove('pointer-events-none', 'opacity-50');
+      } else {
+        whatsappBtn.href = '#';
+        document.getElementById('modal-phone-text').innerText = `TELEFONE NÃO INFORMADO`;
+        whatsappBtn.classList.add('pointer-events-none', 'opacity-50');
+      }
+
+      // 5. Links de Navegação: GOOGLE MAPS e WAZE com Ícones Oficiais
+      const mapsBtn = document.getElementById('modal-maps-link');
+      const wazeBtn = document.getElementById('modal-waze-link');
+      document.getElementById('modal-formatted-address').innerText = formattedAddress;
+
+      const refElem = document.getElementById('modal-address-reference');
+      if (reference) {
+        refElem.innerText = `Ponto de referência/Complemento: ${reference}`;
+        refElem.classList.remove('hidden');
+      } else {
+        refElem.classList.add('hidden');
+      }
+
+      if (coords && coords.latitude && coords.longitude) {
+        mapsBtn.href = `https://www.google.com/maps/dir/?api=1&destination=${coords.latitude},${coords.longitude}`;
+        wazeBtn.href = `https://waze.com/ul?ll=${coords.latitude},${coords.longitude}&navigate=yes`;
+      } else {
+        mapsBtn.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(formattedAddress)}`;
+        wazeBtn.href = `https://waze.com/ul?q=${encodeURIComponent(formattedAddress)}&navigate=yes`;
+      }
+
+      // 6. Forma de Pagamento, Taxa & Troco
+      const payments = order.payments;
+      const isPrepaid = payments && payments.prepaid > 0;
+      const methodInfo = payments && payments.methods && payments.methods.length > 0 ? payments.methods[0].methodInfo || payments.methods[0].method : 'Forma informada no pedido';
+
+      const statusElem = document.getElementById('modal-payment-status');
+      if (isPrepaid) {
+        statusElem.className = 'font-extrabold px-2.5 py-0.5 rounded text-[11px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+        statusElem.innerText = '🟢 PAGO ONLINE (NÃO COBRAR)';
+      } else {
+        statusElem.className = 'font-extrabold px-2.5 py-0.5 rounded text-[11px] bg-amber-500/20 text-amber-300 border border-amber-500/30';
+        statusElem.innerText = '🔴 COBRAR NO ATO DA ENTREGA';
+      }
+
+      document.getElementById('modal-payment-method').innerText = methodInfo;
+      
+      // Exibição do Troco
+      const changeTextElem = document.getElementById('modal-change-text');
+      changeTextElem.innerText = changeInfo.text;
+      if (changeInfo.hasChange) {
+        changeTextElem.className = 'font-extrabold text-emerald-300 bg-emerald-500/20 px-2.5 py-1 rounded-lg border border-emerald-500/30 animate-pulse';
+      } else {
+        changeTextElem.className = 'font-semibold text-gray-400';
+      }
+
+      const feeElem = document.getElementById('modal-delivery-fee');
+      if (deliveryFeeVal > 0) {
+        feeElem.innerText = `R$ ${deliveryFeeVal.toFixed(2)}`;
+      } else {
+        feeElem.innerText = `R$ 0,00 (Sem taxa extra)`;
+      }
+
+      document.getElementById('modal-order-total').innerText = `R$ ${totalVal.toFixed(2)}`;
+
+      // 7. Lista de Itens detalhada
+      const itemsContainer = document.getElementById('modal-items-list');
+      if (items.length > 0) {
+        itemsContainer.innerHTML = items.map(i => {
+          const itemTotal = i.totalPrice ? i.totalPrice.value : (i.unitPrice ? i.unitPrice.value * i.quantity : 0);
+          const optionsHtml = i.options && i.options.length > 0 
+            ? `<div class="text-[10px] text-gray-400 font-medium pl-4 mt-0.5 space-y-0.5">` + i.options.map(o => `• ${o.quantity}x ${o.name}`).join('<br>') + `</div>`
+            : '';
+
+          return `
+            <div class="pt-2 first:pt-0">
+              <div class="flex justify-between font-extrabold text-white text-xs">
+                <span>${i.quantity}x ${i.name}</span>
+                <span class="text-amber-400">R$ ${itemTotal.toFixed(2)}</span>
+              </div>
+              ${optionsHtml}
+            </div>
+          `;
+        }).join('');
+      } else {
+        itemsContainer.innerHTML = `<div class="text-gray-400 text-xs">Itens do pedido.</div>`;
+      }
+
+      // 8. Botão de Ação no Popup
+      const actionContainer = document.getElementById('modal-action-container');
+      actionContainer.innerHTML = `
+        <button
+          onclick="promptConfirmDelivery('${order.displayId}')"
+          class="w-full py-3.5 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 hover:from-emerald-500 hover:to-teal-400 text-white font-extrabold text-xs rounded-2xl shadow-xl shadow-emerald-600/25 flex items-center justify-center space-x-2 transition-all active:scale-95"
+        >
+          <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+          <span>CONFIRMAR ENTREGA</span>
+        </button>
+      `;
+
+      lucide.createIcons();
+      document.getElementById('modal-order-details').classList.remove('hidden');
+    }
+
+    async function fetchMyKanbanOrders() {
+      if (!currentDriver.phone) return;
+
+      const activeContainer = document.getElementById('kanban-active-orders');
+      const completedContainer = document.getElementById('kanban-completed-orders');
+
+      try {
+        const cleanPhone = currentDriver.phone.replace(/\D/g, '');
+        const res = await fetch(`http://localhost:3000/api/driver/my-orders?phone=${cleanPhone}`);
+        const data = await res.json();
+
+        const activeOrders = data.activeOrders || [];
+        const completedOrders = data.completedOrders || [];
+
+        activeOrdersCache = activeOrders;
+
+        // Atualizar Badges
+        document.getElementById('badge-count-active').innerText = activeOrders.length;
+        document.getElementById('badge-count-completed').innerText = completedOrders.length;
+        document.getElementById('mobile-badge-active').innerText = activeOrders.length;
+        document.getElementById('mobile-badge-completed').innerText = completedOrders.length;
+
+        // RENDER COLUNA 1: EM ENTREGA
+        if (activeOrders.length > 0) {
+          activeContainer.innerHTML = activeOrders.map(o => {
+            const displayId = o.displayId || 'PEDIDO';
+            const customerName = o.customer ? o.customer.name : 'Cliente';
+            const customerPhone = o.customer && o.customer.phone ? o.customer.phone.number : '';
+            const address = o.delivery && o.delivery.deliveryAddress ? o.delivery.deliveryAddress.formattedAddress : 'Endereço informado no pedido';
+            const total = o.total && o.total.orderAmount ? o.total.orderAmount.value.toFixed(2) : '0.00';
+            const items = o.items || [];
+            const hasDrink = checkHasBeverage(items);
+            const changeInfo = extractChangeDeep(o);
+
+            // Alerta de Tempo Previsto e Atraso (aviso com 10 min)
+            const timeInfo = getDeliveryTimeAlert(o.delivery?.estimatedDeliveryDateTime, o.createdAt);
+
+            return `
+              <div onclick="openOrderModal('${displayId}')" class="glass-card p-4 sm:p-5 rounded-3xl space-y-3 border-l-4 ${timeInfo.cardBorderClass} shadow-xl transition-all hover:border-amber-400 cursor-pointer group">
+                <div class="flex justify-between items-start">
+                  <div>
+                    <span class="px-2.5 py-0.5 rounded-full bg-brand-500/20 text-brand-400 font-extrabold text-[10px] uppercase flex items-center gap-1 w-fit">
+                      <span class="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse"></span> EM ENTREGA
+                    </span>
+                    <h3 class="text-xl font-extrabold text-white mt-1 group-hover:text-amber-400 transition-colors">#${displayId}</h3>
+                  </div>
+                  
+                  <span class="text-sm font-extrabold text-amber-400 bg-amber-500/10 px-3 py-1 rounded-xl border border-amber-500/20">
+                    R$ ${total}
+                  </span>
+                </div>
+
+                <!-- BANNER DE TEMPO PREVISTO E ALERTA DE ATRASO -->
+                <div class="p-2.5 rounded-xl border text-[11px] flex items-center justify-between ${timeInfo.badgeBgClass}">
+                  <span class="flex items-center gap-1.5">
+                    <i data-lucide="clock" class="w-4 h-4 shrink-0"></i> ${timeInfo.badgeText}
+                  </span>
+                </div>
+
+                <!-- CARD / BANNER DE ATENÇÃO PARA TROCO NO KANBAN -->
+                ${changeInfo.hasChange ? `
+                  <div class="p-3 rounded-2xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 text-xs font-extrabold flex items-center justify-between shadow-lg animate-pulse">
+                    <div class="flex items-center gap-2">
+                      <div class="w-7 h-7 rounded-xl bg-emerald-500/30 text-emerald-300 flex items-center justify-center shrink-0">
+                        <i data-lucide="banknote" class="w-4 h-4"></i>
+                      </div>
+                      <div>
+                        <div class="font-extrabold text-emerald-200">💵 ATENÇÃO: LEVAR TROCO!</div>
+                        <div class="text-[11px] font-semibold text-emerald-300">Devolver R$ ${changeInfo.changeAmountVal.toFixed(2)} (para R$ ${changeInfo.changeForVal.toFixed(2)})</div>
+                      </div>
+                    </div>
+                  </div>
+                ` : ''}
+
+                ${hasDrink ? `
+                  <div class="p-2.5 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-300 text-[11px] font-extrabold flex items-center gap-2 animate-pulse">
+                    <i data-lucide="alert-triangle" class="w-4 h-4 shrink-0 text-amber-400"></i>
+                    <span>⚠️ CONTÉM BEBIDAS NESTE PEDIDO!</span>
+                  </div>
+                ` : ''}
+
+                <div class="p-3.5 bg-gray-900/90 rounded-2xl space-y-2 text-xs border border-gray-800">
+                  <div class="font-extrabold text-white flex items-center gap-2">
+                    <i data-lucide="user" class="w-4 h-4 text-brand-500"></i> ${customerName} ${customerPhone ? `(${customerPhone})` : ''}
+                  </div>
+                  <div class="text-gray-300 text-xs flex items-start gap-2 pt-2 border-t border-gray-800/80 leading-relaxed">
+                    <i data-lucide="map-pin" class="w-4 h-4 text-amber-400 shrink-0 mt-0.5"></i> ${address}
+                  </div>
+                </div>
+
+                <div class="flex gap-2">
+                  <button
+                    onclick="event.stopPropagation(); openOrderModal('${displayId}');"
+                    class="py-3 px-3.5 bg-gray-800 hover:bg-gray-700 text-amber-400 font-extrabold text-xs rounded-2xl border border-gray-700 flex items-center justify-center gap-1"
+                  >
+                    <i data-lucide="eye" class="w-4 h-4"></i> Detalhes
+                  </button>
+                  <button
+                    onclick="event.stopPropagation(); promptConfirmDelivery('${displayId}');"
+                    class="flex-1 py-3 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 hover:from-emerald-500 hover:to-teal-400 text-white font-extrabold text-xs rounded-2xl shadow-xl shadow-emerald-600/20 flex items-center justify-center space-x-1.5 transition-all active:scale-95"
+                  >
+                    <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+                    <span>CONFIRMAR ENTREGA</span>
+                  </button>
+                </div>
+              </div>
+            `;
+          }).join('');
+        } else {
+          activeContainer.innerHTML = `
+            <div class="glass-card p-8 rounded-3xl text-center space-y-3 border border-gray-800">
+              <div class="w-12 h-12 rounded-2xl bg-gray-800 text-brand-400 flex items-center justify-center mx-auto">
+                <i data-lucide="bike" class="w-6 h-6"></i>
+              </div>
+              <h4 class="font-extrabold text-white text-sm">Nenhuma Entrega em Andamento</h4>
+              <p class="text-xs text-gray-400 leading-relaxed">
+                Assim que você despachar um pedido no painel da CompetiLivery, ele aparecerá aqui nesta coluna em tempo real.
+              </p>
+            </div>
+          `;
+        }
+
+        // RENDER COLUNA 2: FINALIZADOS
+        if (completedOrders.length > 0) {
+          completedContainer.innerHTML = completedOrders.map(c => `
+            <div class="glass-card p-4 rounded-3xl space-y-2 border-l-4 border-l-emerald-500 opacity-90">
+              <div class="flex justify-between items-center">
+                <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-extrabold text-[10px] uppercase">
+                  ENTREGUE
+                </span>
+                <span class="text-xs font-bold text-gray-400">${new Date(c.deliveredAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <h4 class="font-extrabold text-white text-base">#${c.displayId}</h4>
+                <span class="font-extrabold text-emerald-400 text-xs">R$ ${(c.total || 0).toFixed(2)}</span>
+              </div>
+              <div class="text-xs text-gray-400 truncate"><i data-lucide="user" class="w-3.5 h-3.5 inline text-gray-500"></i> ${c.customerName}</div>
+              <div class="text-[11px] text-gray-500 truncate"><i data-lucide="map-pin" class="w-3 h-3 inline text-gray-500"></i> ${c.address}</div>
+            </div>
+          `).join('');
+        } else {
+          completedContainer.innerHTML = `
+            <div class="glass-card p-8 rounded-3xl text-center space-y-2 border border-gray-800 text-gray-500 text-xs">
+              <i data-lucide="check-circle-2" class="w-8 h-8 mx-auto text-gray-600 mb-1"></i>
+              Nenhuma entrega finalizada nas últimas 12 horas.
+            </div>
+          `;
+        }
+
+        lucide.createIcons();
+
+      } catch (err) {
+        activeContainer.innerHTML = `
+          <div class="glass-card p-4 rounded-2xl text-center text-xs text-gray-400 border border-gray-800">
+            Nenhuma entrega em andamento.
+          </div>
+        `;
+      }
+    }
+
+    // Inicialização Inteligente com Persistência
+    window.onload = function() {
+      const savedName = localStorage.getItem('driver_name');
+      const savedPhone = localStorage.getItem('driver_phone');
+
+      if (!savedName || !savedPhone) {
+        document.getElementById('btn-close-login').classList.add('hidden');
+        document.getElementById('modal-driver-login').classList.remove('hidden');
+      } else {
+        currentDriver = { name: savedName, phone: savedPhone };
+        document.getElementById('btn-close-login').classList.remove('hidden');
+        updateDriverDisplay();
+        registerDriverOnline();
+        fetchMyKanbanOrders();
+      }
+
+      setInterval(fetchMyKanbanOrders, 5000);
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,78 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: deliveryvip_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: deliveryvip_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  mock-deliveryvip:
+    build:
+      context: ./mock-deliveryvip
+    container_name: deliveryvip_mock
+    restart: always
+    ports:
+      - "3001:3001"
+
+  backend:
+    build:
+      context: ./backend
+    container_name: deliveryvip_backend
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      NODE_ENV: production
+      DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/deliveryvip_db?schema=public"
+      JWT_SECRET: deliveryvip_jwt_super_secret_key_2026
+      JWT_REFRESH_SECRET: deliveryvip_jwt_refresh_secret_key_2026
+      ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef
+      DELIVERYVIP_API_URL: http://mock-deliveryvip:3001
+      DELIVERYVIP_CLIENT_ID: default_client_id
+      DELIVERYVIP_CLIENT_SECRET: default_client_secret
+      DELIVERYVIP_MERCHANT_ID: default_merchant_uuid
+    depends_on:
+      - postgres
+      - mock-deliveryvip
+
+  worker:
+    build:
+      context: ./backend
+    container_name: deliveryvip_worker
+    restart: always
+    command: npm run worker
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/deliveryvip_db?schema=public"
+      JWT_SECRET: deliveryvip_jwt_super_secret_key_2026
+      JWT_REFRESH_SECRET: deliveryvip_jwt_refresh_secret_key_2026
+      ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef
+      DELIVERYVIP_API_URL: http://mock-deliveryvip:3001
+      DELIVERYVIP_CLIENT_ID: default_client_id
+      DELIVERYVIP_CLIENT_SECRET: default_client_secret
+      DELIVERYVIP_MERCHANT_ID: default_merchant_uuid
+    depends_on:
+      - postgres
+      - backend
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: deliveryvip_frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
